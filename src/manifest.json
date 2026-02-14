@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Dedupe: Tab Deduplicator",
+  "version": "1.0",
+  "description": "Switch to existing tab instead of opening duplicate",
+  "permissions": ["tabs", "webRequest", "webRequestBlocking", "<all_urls>"],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

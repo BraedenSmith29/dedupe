@@ -1,0 +1,13 @@
+{
+  "name": "firefox-extension-template",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc && copyfiles -u 1 src/manifest.json src/*.html src/styles/*.css src/*.png build/"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1"
+  },
+  "dependencies": {
+    "@types/firefox-webext-browser": "^143.0.0"
+  }
+}
