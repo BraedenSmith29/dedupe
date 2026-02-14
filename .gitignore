@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 build/
+release/
 
 # TypeScript cache
 *.tsbuildinfo

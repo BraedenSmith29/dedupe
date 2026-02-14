@@ -13,5 +13,13 @@
       "js": ["content.js"],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+        "id": "@dedupe-tab-deduplicator",
+        "data_collection_permissions": {
+          "required": ["none"]
+         }
+      }
+  }
 }
