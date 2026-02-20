@@ -47,8 +47,8 @@ async function setUpPausing(): Promise<void> {
         }
       }
       
-      const customInputContainer = document.getElementById('customInputContainer') as HTMLElement;
-      customInputContainer.hidden = true;
+      const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
+      customPauseDurationContainer.hidden = true;
 
       await Pause.setPause({
         pauseStatus: duration as PausedStatus,
@@ -60,12 +60,12 @@ async function setUpPausing(): Promise<void> {
   
   const customButton = document.getElementById('custom');
   customButton?.addEventListener('click', async () => {
-    const customInputContainer = document.getElementById('customInputContainer') as HTMLElement;
-    if (customButton.classList.contains('selected') || !customInputContainer.hidden) {
+    const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
+    if (customButton.classList.contains('selected') || !customPauseDurationContainer.hidden) {
       await Pause.unpause();
-      customInputContainer.hidden = true;
+      customPauseDurationContainer.hidden = true;
     } else {
-      customInputContainer.hidden = false;
+      customPauseDurationContainer.hidden = false;
     }
   });
 

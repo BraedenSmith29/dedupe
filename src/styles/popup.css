@@ -2,15 +2,11 @@
 
 * {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   width: 420px;
-  padding: 0;
 }
 
 /* Header */
@@ -23,52 +19,17 @@ body {
   align-items: center;
 }
 
+.header h1 {
+  font-size: 24px;
+}
+
 .header-right {
   display: flex;
   align-items: center;
 }
 
-.settings-icon-btn {
-  background: none;
-  border: none;
-  color: inherit;
-  padding: 6px;
-  margin-left: 8px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.settings-icon-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.settings-icon-btn:hover,
-.settings-icon-btn.selected {
-  background: rgba(255, 255, 255, 0.2);
-  outline: none;
-  transform: scale(1.05) rotate(360deg);
-}
-
-.settings-icon-btn:active {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(0.95) rotate(360deg);
-}
-
-.header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
 .status-badge {
   background: rgba(255, 255, 255, 0.3);
-  color: white;
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -79,6 +40,28 @@ body {
 
 .status-badge.paused {
   background: #ff6b6b;
+}
+
+#settingsToggle {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 6px;
+  margin-left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+#settingsToggle:hover,
+#settingsToggle.selected {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05) rotate(360deg);
+}
+
+#settingsToggle:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95) rotate(360deg);
 }
 
 /* Sections */
@@ -118,12 +101,7 @@ body {
   background: #f5f5f5;
   border: 2px solid transparent;
   border-radius: 8px;
-  color: #333;
-  cursor: pointer;
-  font-size: 13px;
   padding: 10px 12px;
-  font-weight: 500;
-  transition: all 0.2s ease;
 }
 
 .pause-btn:hover {
@@ -137,17 +115,6 @@ body {
   border-color: #667eea;
 }
 
-#customPauseDuration {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
 .pause-status {
   background: #e3f2fd;
   color: #1976d2;
@@ -156,64 +123,27 @@ body {
   font-size: 13px;
 }
 
-#customInputContainer {
+#customPauseDurationContainer {
   display: flex;
   gap: 8px;
 }
 
-#customMinutes {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
+#applyCustomPauseDuration {
+  background: #667eea;
+  color: white;
+  padding: 8px 16px;
 }
 
-#customMinutes:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+#applyCustomPauseDuration:hover {
+  background: #5568d3;
 }
 
 /* Setting Items */
 .setting-item label {
   display: block;
   font-size: 13px;
-  font-weight: 500;
   color: #333;
   margin-bottom: 6px;
-}
-
-.setting-item select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.setting-item input[type="number"] {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.setting-item select:hover {
-  border-color: #ccc;
-}
-
-.setting-item select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .setting-item.checkbox {
@@ -223,10 +153,8 @@ body {
 }
 
 .setting-item.checkbox input {
-  cursor: pointer;
   width: 18px;
   height: 18px;
-  accent-color: #667eea;
 }
 
 .setting-item.checkbox label {
@@ -250,7 +178,7 @@ body {
   align-self: center;
 }
 
-/* Buttons */
+/* Base Element Styles */
 button {
   transition: all 0.2s ease;
   font-weight: 500;
@@ -260,40 +188,36 @@ button {
   font-size: 13px;
   padding: 10px 16px;
 }
-
 .secondary-btn {
   width: 100%;
   background: #667eea;
   color: white;
-  margin-top: 8px;
 }
-
 .secondary-btn:hover {
   background: #5568d3;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.reset-btn {
+select,
+input {
   width: 100%;
-  background: #f5f5f5;
-  color: #666;
+  padding: 8px 12px;
   border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  accent-color: #667eea;
 }
-
-.reset-btn:hover {
-  background: #e8e8e8;
+select:hover {
   border-color: #ccc;
 }
-
-#applyCustom {
-  background: #667eea;
-  color: white;
-  padding: 8px 16px;
-}
-
-#applyCustom:hover {
-  background: #5568d3;
+select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* Scrollbar Styling */
