@@ -13,12 +13,6 @@ body {
   padding: 0;
 }
 
-.popup-container {
-  background: white;
-  display: flex;
-  flex-direction: column;
-}
-
 /* Header */
 .header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
