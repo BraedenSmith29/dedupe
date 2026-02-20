@@ -1,3 +1,12 @@
+import Pause from "./Pause";
+
+browser.runtime.onStartup.addListener(async () => {
+  const pauseStatus = (await Pause.getPause()).pauseStatus;
+  if (pauseStatus === 'session') {
+    await Pause.unpause();
+  }
+});
+
 browser.runtime.onMessage.addListener(async (message) => {
   if (message.action === 'handleManualNewTabRedirect') {
     const existingTab = await findExistingTab(message.url);

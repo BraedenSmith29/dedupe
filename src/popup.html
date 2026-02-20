@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dedupe Settings</title>
+    <link rel="stylesheet" href="styles/popup.css" />
+  </head>
+  <body>
+    <div class="popup-container">
+      <!-- Header -->
+      <div class="header">
+        <h1>Dedupe</h1>
+        <div class="header-right">
+          <div class="status-badge" id="statusBadge">Active</div>
+          <button class="settings-icon-btn" id="settingsToggle" aria-label="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M41.43,178.09A99.14,99.14,0,0,1,31.36,153.8l16.78-21a81.59,81.59,0,0,1,0-9.64l-16.77-21a99.43,99.43,0,0,1,10.05-24.3l26.71-3a81,81,0,0,1,6.81-6.81l3-26.7A99.14,99.14,0,0,1,102.2,31.36l21,16.78a81.59,81.59,0,0,1,9.64,0l21-16.77a99.43,99.43,0,0,1,24.3,10.05l3,26.71a81,81,0,0,1,6.81,6.81l26.7,3a99.14,99.14,0,0,1,10.07,24.29l-16.78,21a81.59,81.59,0,0,1,0,9.64l16.77,21a99.43,99.43,0,0,1-10,24.3l-26.71,3a81,81,0,0,1-6.81,6.81l-3,26.7a99.14,99.14,0,0,1-24.29,10.07l-21-16.78a81.59,81.59,0,0,1-9.64,0l-21,16.77a99.43,99.43,0,0,1-24.3-10l-3-26.71a81,81,0,0,1-6.81-6.81Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="controls">
+        <!-- Pause Section -->
+        <div class="section" id="pauseSection">
+          <h2>Pause Deduplicator</h2>
+          <div class="pause-controls">
+            <button class="pause-btn apply-pause" id="session" data-duration="session">Session</button>
+            <button class="pause-btn apply-pause" id="permanently" data-duration="permanently">Permanently</button>
+            <button class="pause-btn apply-pause" id="preset0" data-duration="preset0" data-index="0">Preset 1</button>
+            <button class="pause-btn apply-pause" id="preset1" data-duration="preset1" data-index="1">Preset 2</button>
+            <button class="pause-btn" id="custom" data-duration="custom">Custom</button>
+          </div>
+          <div id="customInputContainer" hidden>
+            <input type="number" id="customPauseDuration" placeholder="Minutes" min="1" max="1440" />
+            <button class="apply-pause" id="applyCustom" data-duration="custom">Apply</button>
+          </div>
+          <div id="pauseStatus" class="pause-status" hidden></div>
+        </div>
+
+        <!-- Duplicate Tabs Section -->
+        <div class="section">
+          <h2>Duplicate Tabs</h2>
+          <button id="deduplicateNow" class="secondary-btn">Deduplicate Open Tabs Now</button>
+        </div>
+      </div>
+
+      <div id="settings" hidden>
+        <!-- Matching Behavior Settings -->
+        <div class="section" id="matchingBehaviorSection">
+          <h2>Matching Behavior</h2>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="ignoreQueryParams" />
+            <label for="ignoreQueryParams">Ignore query parameters when matching</label>
+          </div>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="ignoreHash" />
+            <label for="ignoreHash">Ignore hash anchors when matching</label>
+          </div>
+        </div>
+
+        <!-- Deduplication Behavior Settings -->
+        <div class="section" id="deduplicationBehaviorSection">
+          <h2>Deduplication Behavior</h2>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="checkWhenOpeningNewTab" />
+            <label for="checkWhenOpeningNewTab">Deduplicate tabs when opening new tab</label>
+          </div>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="checkWhenOpeningNewWindow" />
+            <label for="checkWhenOpeningNewWindow">Deduplicate tabs when opening new window</label>
+          </div>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="checkWhenRedirecting" />
+            <label for="checkWhenRedirecting">Deduplicate tabs when redirecting</label>
+          </div>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="checkWhenFirstNavigationInFreshTab" />
+            <label for="checkWhenFirstNavigationInFreshTab">Deduplicate tabs on first navigation in a fresh tab</label>
+          </div>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="removeDeduplicatedTabsFromHistory" />
+            <label for="removeDeduplicatedTabsFromHistory">Remove deduplicated tabs from history</label>
+          </div>
+          <div class="setting-item">
+            <label for="sameWindowBehavior">When a duplicate tab is found in the same window:</label>
+            <select id="sameWindowBehavior">
+              <option value="keepOld">Keep old tab, don't switch</option>
+              <option value="keepOldAndSwitch">Keep old tab and switch</option>
+              <option value="keepNew">Keep new tab (close old)</option>
+              <option value="keepNewAndSwitch">Keep new tab and switch</option>
+            </select>
+          </div>
+          <div class="setting-item checkbox">
+            <input type="checkbox" id="onlyCheckSameWindow" />
+            <label for="onlyCheckSameWindow">Deduplicate tabs in all windows</label>
+          </div>
+          <div class="setting-item">
+            <label for="otherWindowBehavior">When a duplicate tab is found in another window:</label>
+            <select id="otherWindowBehavior">
+              <option value="keepOld">Keep old tab, don't switch</option>
+              <option value="keepOldAndSwitch">Keep old tab and switch</option>
+              <option value="keepNew">Keep new tab (close old)</option>
+              <option value="keepNewAndSwitch">Keep new tab and switch</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Pause Settings -->
+        <div class="section">
+          <h2>Pause Settings</h2>
+          <div class="setting-item">
+            <div class="inline-setting-item">
+              <label for="pauseTimePreset0">Pause Preset 1 (minutes):</label>
+              <input type="number" id="pauseTimePreset0" min="1" max="1440" placeholder="Minutes" data-index="0" />
+            </div>
+            <label class="error" for="pauseTimePreset0" hidden>Pause time must be between 1 and 1440 minutes</p>
+          </div>
+          <div class="setting-item">
+            <div class="inline-setting-item">
+              <label for="pauseTimePreset1">Pause Preset 2 (minutes):</label>
+              <input type="number" id="pauseTimePreset1" min="1" max="1440" placeholder="Minutes" data-index="1" />
+            </div>
+            <label class="error" for="pauseTimePreset1" hidden>Pause time must be between 1 and 1440 minutes</p>
+          </div>
+        </div>
+
+        <!-- Reset To Defaults -->
+        <div class="section">
+          <button id="resetSettings" class="reset-btn">Reset to Defaults</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

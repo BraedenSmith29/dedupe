@@ -3,7 +3,10 @@
   "name": "Dedupe: Tab Deduplicator",
   "version": "1.0",
   "description": "Switch to existing tab instead of opening duplicate",
-  "permissions": ["tabs", "webRequest", "webRequestBlocking", "<all_urls>"],
+  "permissions": ["storage", "tabs", "webRequest", "webRequestBlocking", "<all_urls>"],
+  "browser_action": {
+    "default_popup": "popup.html"
+  },
   "background": {
     "scripts": ["background.js"]
   },
