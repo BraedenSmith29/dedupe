@@ -31,10 +31,10 @@
         <button class="pause-btn apply-pause" id="preset1" data-duration="preset1" data-index="1">Preset 2</button>
         <button class="pause-btn" id="custom" data-duration="custom">Custom</button>
       </div>
-      <div id="customPauseDurationContainer" hidden>
+      <form id="customPauseDurationContainer" hidden>
         <input type="number" id="customPauseDuration" placeholder="Minutes" min="1" max="1440" />
-        <button id="applyCustomPauseDuration" class="apply-pause" data-duration="custom">Apply</button>
-      </div>
+        <button type="submit" id="applyCustomPauseDuration" class="apply-pause" data-duration="custom">Apply</button>
+      </form>
       <div id="pauseStatus" class="pause-status" hidden></div>
     </div>
 

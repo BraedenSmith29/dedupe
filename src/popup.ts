@@ -18,9 +18,12 @@ function setupSettingsToggle(): void {
 async function setUpPausing(): Promise<void> {
   const buttons = document.querySelectorAll('.apply-pause');
   buttons.forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+
       if (btn.classList.contains('selected')) {
         await Pause.unpause();
+        await updatePauseStatus();
         return;
       }
 
@@ -63,6 +66,7 @@ async function setUpPausing(): Promise<void> {
     const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
     if (customButton.classList.contains('selected') || !customPauseDurationContainer.hidden) {
       await Pause.unpause();
+      await updatePauseStatus();
       customPauseDurationContainer.hidden = true;
     } else {
       customPauseDurationContainer.hidden = false;
