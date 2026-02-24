@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles/popup.css" />
 </head>
 
-<body class="dark-mode">
+<body>
   <!-- Header -->
   <div class="header">
     <h1>Dedupe</h1>
@@ -122,6 +122,15 @@
           <input type="number" id="pauseTimePreset1" min="1" max="1440" placeholder="Minutes" data-index="1" />
         </div>
         <label class="error" for="pauseTimePreset1" hidden>Pause time must be between 1 and 1440 minutes</p>
+      </div>
+    </div>
+
+    <!-- Dark Mode -->
+    <div class="section" id="darkModeSection">
+      <h2>Dark Mode</h2>
+      <div class="setting-item checkbox">
+        <input type="checkbox" id="darkMode" />
+        <label for="darkMode">Enable dark mode</label>
       </div>
     </div>
 

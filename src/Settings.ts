@@ -12,6 +12,7 @@ interface SettingsData {
     onDuplicateTabFoundInOtherWindow: SwitchBehavior;
     ignoreQuery: boolean;
     ignoreHash: boolean;
+    darkMode: boolean;
 }
 
 class Settings {
@@ -28,6 +29,7 @@ class Settings {
         onDuplicateTabFoundInOtherWindow: 'keepOldAndSwitch',
         ignoreQuery: false,
         ignoreHash: false,
+        darkMode: false,
     };
 
     private static cache: SettingsData | null = null;
@@ -75,6 +77,7 @@ class Settings {
         if (!switchBehaviorValidator(setting.onDuplicateTabFoundInOtherWindow)) return false;
         if (!booleanValidator(setting.ignoreQuery)) return false;
         if (!booleanValidator(setting.ignoreHash)) return false;
+        if (!booleanValidator(setting.darkMode)) return false;
 
         return true;
     }
@@ -203,6 +206,15 @@ class Settings {
 
     static async setIgnoreHash(ignoreHash: boolean): Promise<void> {
         await this.setSettings({ ignoreHash });
+    }
+
+    static async getDarkMode(): Promise<boolean> {
+        const settings = await this.getSettings();
+        return settings.darkMode;
+    }
+
+    static async setDarkMode(darkMode: boolean): Promise<void> {
+        await this.setSettings({ darkMode });
     }
 }
 

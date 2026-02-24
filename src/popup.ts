@@ -130,6 +130,14 @@ function getResumingCountdownText(pausedUntil: number): string {
   }
 }
 
+async function setDarkMode(): Promise<void> {
+  if (await Settings.getDarkMode()) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
 async function setUpBasicSettingsHandlers(): Promise<void> {
   const onlyCheckSameWindow = document.getElementById('onlyCheckSameWindow') as HTMLInputElement;
   const checkWhenRedirecting = document.getElementById('checkWhenRedirecting') as HTMLInputElement;
@@ -141,6 +149,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   const otherWindowBehavior = document.getElementById('otherWindowBehavior') as HTMLSelectElement;
   const ignoreQueryParams = document.getElementById('ignoreQueryParams') as HTMLInputElement;
   const ignoreHash = document.getElementById('ignoreHash') as HTMLInputElement;
+  const darkMode = document.getElementById('darkMode') as HTMLInputElement;
 
   const settings = await Settings.getSettings();
   onlyCheckSameWindow.checked = settings.onlyCheckSameWindow;
@@ -153,6 +162,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   otherWindowBehavior.value = settings.onDuplicateTabFoundInOtherWindow;
   ignoreQueryParams.checked = settings.ignoreQuery;
   ignoreHash.checked = settings.ignoreHash;
+  darkMode.checked = settings.darkMode;
 
   const handleChange = async () => {
     await Settings.setSettings({
@@ -166,7 +176,9 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
       onDuplicateTabFoundInOtherWindow: otherWindowBehavior.value as SwitchBehavior,
       ignoreQuery: ignoreQueryParams.checked,
       ignoreHash: ignoreHash.checked,
+      darkMode: darkMode.checked,
     });
+    await setDarkMode();
   };
 
   onlyCheckSameWindow.addEventListener('change', handleChange);
@@ -179,6 +191,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   otherWindowBehavior.addEventListener('change', handleChange);
   ignoreQueryParams.addEventListener('change', handleChange);
   ignoreHash.addEventListener('change', handleChange);
+  darkMode.addEventListener('change', handleChange);
 }
 
 async function setUpPauseSettingHandler(): Promise<void> {
@@ -237,7 +250,7 @@ function setPauseTimePresetButtonLabel(index: number, pauseTimePreset: number): 
   pauseTimePresetButton.textContent = formatPresetLabel(pauseTimePreset);
 }
 
-function setupResetSettingsHandler(): void {
+function setUpResetSettingsHandler(): void {
   const resetButton = document.getElementById('resetSettings') as HTMLElement;
   resetButton.addEventListener('click', async () => {
     if (confirm('Are you sure you want to reset all settings to defaults?')) {
@@ -252,8 +265,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupSettingsToggle();
   await setUpPausing();
 
+  await setDarkMode();
   await setUpBasicSettingsHandlers();
   await setUpPauseSettingHandler();
-  setupResetSettingsHandler();
+  setUpResetSettingsHandler();
 });
   

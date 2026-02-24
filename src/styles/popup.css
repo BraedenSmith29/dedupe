@@ -24,8 +24,7 @@
   --color-focus-ring: rgba(102, 126, 234, 0.1);
 }
 
-:root[data-theme="dark"],
-body.dark-mode {
+:root[data-theme="dark"] {
   --color-primary: #5a73e2;
   --color-primary-hover: #4a63cd;
   --color-paused: #c33535;
