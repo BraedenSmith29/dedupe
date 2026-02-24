@@ -1,4 +1,5 @@
 import Pause from "./Pause";
+import Settings from "./Settings";
 
 browser.runtime.onStartup.addListener(async () => {
   const pauseStatus = (await Pause.getPause()).pauseStatus;
@@ -17,6 +18,8 @@ browser.runtime.onMessage.addListener(async (message) => {
     }
 
     await browser.tabs.create({ url: message.url, active: false });
+  } else if (message.action === 'updatedSettings') {
+    Settings.clearCache();
   }
 });
 
@@ -42,12 +45,38 @@ browser.webRequest.onBeforeRequest.addListener(
   ["blocking"]
 );
 
+async function getComparisonUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+
+    if (await Settings.getIgnoreQuery()) {
+      parsedUrl.search = '';
+    }
+    if (await Settings.getIgnoreHash()) {
+      parsedUrl.hash = '';
+    }
+
+    return parsedUrl.href;
+  } catch (e) {
+    console.error(`Invalid URL: ${url}`);
+    return url;
+  }
+}
+
 async function findExistingTab(url: string) {
-  const targetUrl = new URL(url).href;
-  return browser.tabs.query({ url: targetUrl })
-    .then(tabs => {
-      return tabs.length > 0 ? tabs[0] : null;
-    });
+  const targetUrl = await getComparisonUrl(url);
+  return browser.tabs.query({})
+    .then(async tabs => {
+      for (const tab of tabs) {
+        if (tab.url) {
+          const tabComparisonUrl = await getComparisonUrl(tab.url);
+          if (tabComparisonUrl === targetUrl) {
+            return tab;
+          }
+        }
+      }
+    })
+    .catch(() => null);
 }
 
 async function switchToTab(tab: browser.tabs.Tab) {

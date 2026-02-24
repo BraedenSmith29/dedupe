@@ -34,6 +34,10 @@ class Settings {
 
     private static cache: SettingsData | null = null;
 
+    static clearCache() {
+        this.cache = null;
+    }
+
     static async load(): Promise<SettingsData> {
         try {
             const stored = await browser.storage.local.get(this.STORAGE_KEY);
@@ -45,6 +49,8 @@ class Settings {
 
     static async save(settings: SettingsData): Promise<void> {
         this.cache = settings;
+        // Notify background script to update settings immediately
+        browser.runtime.sendMessage({ action: 'updatedSettings' });
         await browser.storage.local.set({ [this.STORAGE_KEY]: settings });
     }
 
