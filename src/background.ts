@@ -9,16 +9,7 @@ browser.runtime.onStartup.addListener(async () => {
 });
 
 browser.runtime.onMessage.addListener(async (message) => {
-  if (message.action === 'handleManualNewTabRedirect') {
-    const existingTab = await findExistingTab(message.url);
-    
-    if (existingTab) {
-      const tabSwitched = await switchToTab(existingTab);
-      if (tabSwitched) return;
-    }
-
-    await browser.tabs.create({ url: message.url, active: false });
-  } else if (message.action === 'updatedSettings') {
+  if (message.action === 'updatedSettings') {
     Settings.clearCache();
   }
 });
