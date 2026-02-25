@@ -33,12 +33,20 @@ browser.windows.onRemoved.addListener((windowId) => {
   newWindows.delete(windowId);
 });
 
+let currentFocusedWindowId = -1;
+
+browser.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId !== -1) {
+    currentFocusedWindowId = windowId;
+  }
+});
+
 function isReloadingTab(tab: browser.tabs.Tab, newUrl: string) {
   return tab.url === newUrl;
 }
 
 function isDeliberateDuplicateOrOpenedFromHistory(tab: browser.tabs.Tab) {
-  return tab.url !== 'about:blank' && tab.url !== 'about:newtab' && tab.url !== 'about:home' && tab.id && newTabs.has(tab.id);
+  return tab.url !== 'about:blank' && tab.url !== 'about:newtab' && tab.url !== 'about:home' && tab.id !== undefined && newTabs.has(tab.id);
 }
 
 function isFirstNavigationInFreshTab(tab: browser.tabs.Tab) {
@@ -46,11 +54,11 @@ function isFirstNavigationInFreshTab(tab: browser.tabs.Tab) {
 }
 
 function isOpenedInNewWindow(tab: browser.tabs.Tab) {
-  return tab.url === 'about:blank' && tab.windowId && newWindows.has(tab.windowId) && !isFirstNavigationInFreshTab(tab);
+  return tab.url === 'about:blank' && tab.windowId !== undefined && newWindows.has(tab.windowId) && !isFirstNavigationInFreshTab(tab);
 }
 
 function isOpenedInNewTabInSameWindow(tab: browser.tabs.Tab) {
-  return tab.url === 'about:blank' && tab.id && newTabs.has(tab.id) && !isOpenedInNewWindow(tab) && !isFirstNavigationInFreshTab(tab);
+  return tab.url === 'about:blank' && tab.id !== undefined && newTabs.has(tab.id) && !isOpenedInNewWindow(tab) && !isFirstNavigationInFreshTab(tab);
 }
 
 function isRedirect(tab: browser.tabs.Tab) {
@@ -59,6 +67,8 @@ function isRedirect(tab: browser.tabs.Tab) {
 
 browser.webRequest.onBeforeRequest.addListener(
   async (requestDetails) => {
+    const sourceWindowId = currentFocusedWindowId;
+
     const allowRequest = (tabId: number | null = null, windowId: number | null = null) => {
       if (tabId !== null) newTabs.delete(tabId);
       if (windowId !== null) newWindows.delete(windowId);
@@ -91,13 +101,13 @@ browser.webRequest.onBeforeRequest.addListener(
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
 
-    const existingTab = await findExistingTab(requestDetails.url, currentTab.id);
+    const existingTab = await findExistingTab(requestDetails.url, currentTab.id, sourceWindowId);
     if (!existingTab) return allowRequest(requestDetails.tabId, currentTab.windowId);
 
     const tabSwitched = await switchToTab(existingTab);
     if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
 
-    await closeTab(requestDetails.tabId, true);
+    await closeTab(requestDetails.tabId, requestDetails.url);
 
     return { cancel: true };
   },
@@ -123,20 +133,25 @@ async function getComparisonUrl(url: string) {
   }
 }
 
-async function findExistingTab(url: string, currentTabId: number | null = null) {
+async function findExistingTab(url: string, currentTabId: number | undefined, sourceWindowId: number) {
   const targetUrl = await getComparisonUrl(url);
-  return browser.tabs.query({})
-    .then(async tabs => {
-      for (const tab of tabs) {
-        if (tab.url && tab.id !== currentTabId) {
-          const tabComparisonUrl = await getComparisonUrl(tab.url);
-          if (tabComparisonUrl === targetUrl) {
-            return tab;
-          }
-        }
+
+  let query = {};
+  if (!(await Settings.getDeduplicateInAllWindows())) {
+    query = { windowId: sourceWindowId };
+  }
+
+  const allTabs = await browser.tabs.query(query);
+  for (const tab of allTabs) {
+    if (tab.url && tab.id !== currentTabId) {
+      const tabComparisonUrl = await getComparisonUrl(tab.url);
+      if (tabComparisonUrl === targetUrl) {
+        return tab;
       }
-    })
-    .catch(() => null);
+    }
+  }
+
+  return null;
 }
 
 async function switchToTab(tab: browser.tabs.Tab) {
@@ -149,9 +164,9 @@ async function switchToTab(tab: browser.tabs.Tab) {
   }
 }
 
-async function closeTab(tabId: number, noHistory: boolean = false) {
-  if (noHistory) {
-    await browser.tabs.update(tabId, { url: 'about:blank' });
+async function closeTab(tabId: number, targetUrl: string) {
+  if (!(await Settings.getRemoveDeduplicatedTabsFromHistory())) {
+    await browser.tabs.update(tabId, { url: targetUrl });
   }
   await browser.tabs.remove(tabId);
 }

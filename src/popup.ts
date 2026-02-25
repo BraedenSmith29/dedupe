@@ -139,7 +139,7 @@ async function setDarkMode(): Promise<void> {
 }
 
 async function setUpBasicSettingsHandlers(): Promise<void> {
-  const onlyCheckSameWindow = document.getElementById('onlyCheckSameWindow') as HTMLInputElement;
+  const deduplicateInAllWindows = document.getElementById('deduplicateInAllWindows') as HTMLInputElement;
   const checkWhenRedirecting = document.getElementById('checkWhenRedirecting') as HTMLInputElement;
   const checkWhenOpeningNewTab = document.getElementById('checkWhenOpeningNewTab') as HTMLInputElement;
   const checkWhenOpeningNewWindow = document.getElementById('checkWhenOpeningNewWindow') as HTMLInputElement;
@@ -152,7 +152,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   const darkMode = document.getElementById('darkMode') as HTMLInputElement;
 
   const settings = await Settings.getSettings();
-  onlyCheckSameWindow.checked = settings.onlyCheckSameWindow;
+  deduplicateInAllWindows.checked = settings.deduplicateInAllWindows;
   checkWhenRedirecting.checked = settings.checkWhenRedirecting;
   checkWhenOpeningNewTab.checked = settings.checkWhenOpeningNewTab;
   checkWhenOpeningNewWindow.checked = settings.checkWhenOpeningNewWindow;
@@ -164,9 +164,11 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   ignoreHash.checked = settings.ignoreHash;
   darkMode.checked = settings.darkMode;
 
+  (otherWindowBehavior.closest('.setting-item') as HTMLElement).hidden = !settings.deduplicateInAllWindows;
+
   const handleChange = async () => {
     await Settings.setSettings({
-      onlyCheckSameWindow: onlyCheckSameWindow.checked,
+      deduplicateInAllWindows: deduplicateInAllWindows.checked,
       checkWhenRedirecting: checkWhenRedirecting.checked,
       checkWhenOpeningNewTab: checkWhenOpeningNewTab.checked,
       checkWhenOpeningNewWindow: checkWhenOpeningNewWindow.checked,
@@ -178,10 +180,11 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
       ignoreHash: ignoreHash.checked,
       darkMode: darkMode.checked,
     });
+    (otherWindowBehavior.closest('.setting-item') as HTMLElement).hidden = !deduplicateInAllWindows.checked;
     await setDarkMode();
   };
 
-  onlyCheckSameWindow.addEventListener('change', handleChange);
+  deduplicateInAllWindows.addEventListener('change', handleChange);
   checkWhenRedirecting.addEventListener('change', handleChange);
   checkWhenOpeningNewTab.addEventListener('change', handleChange);
   checkWhenOpeningNewWindow.addEventListener('change', handleChange);

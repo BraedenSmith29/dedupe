@@ -2,7 +2,7 @@ export type SwitchBehavior = 'keepOld' | 'keepOldAndSwitch' | 'keepNew' | 'keepN
 
 interface SettingsData {
     pauseTimePresets: [number, number];
-    onlyCheckSameWindow: boolean;
+    deduplicateInAllWindows: boolean;
     checkWhenRedirecting: boolean;
     checkWhenOpeningNewTab: boolean;
     checkWhenOpeningNewWindow: boolean;
@@ -19,7 +19,7 @@ class Settings {
     private static readonly STORAGE_KEY = 'dedupeSettings';
     private static readonly DEFAULT_SETTINGS: SettingsData = {
         pauseTimePresets: [1, 5],
-        onlyCheckSameWindow: false,
+        deduplicateInAllWindows: false,
         checkWhenRedirecting: false,
         checkWhenOpeningNewTab: true,
         checkWhenOpeningNewWindow: false,
@@ -73,7 +73,7 @@ class Settings {
         const switchBehaviorValidator = (v: unknown) => ['keepOld', 'keepOldAndSwitch', 'keepNew', 'keepNewAndSwitch'].includes(v as string);
 
         if (!pauseTimePresetsValidator(setting.pauseTimePresets)) return false;
-        if (!booleanValidator(setting.onlyCheckSameWindow)) return false;
+        if (!booleanValidator(setting.deduplicateInAllWindows)) return false;
         if (!booleanValidator(setting.checkWhenRedirecting)) return false;
         if (!booleanValidator(setting.checkWhenOpeningNewTab)) return false;
         if (!booleanValidator(setting.checkWhenOpeningNewWindow)) return false;
@@ -124,13 +124,13 @@ class Settings {
         await this.setSettings({ pauseTimePresets: newPauseTimePresets });
     }
 
-    static async getOnlyCheckSameWindow(): Promise<boolean> {
+    static async getDeduplicateInAllWindows(): Promise<boolean> {
         const settings = await this.getSettings();
-        return settings.onlyCheckSameWindow;
+        return settings.deduplicateInAllWindows;
     }
 
-    static async setOnlyCheckSameWindow(onlyCheckSameWindow: boolean): Promise<void> {
-        await this.setSettings({ onlyCheckSameWindow });
+    static async setDeduplicateInAllWindows(deduplicateInAllWindows: boolean): Promise<void> {
+        await this.setSettings({ deduplicateInAllWindows });
     }
 
     static async getCheckWhenRedirecting(): Promise<boolean> {
