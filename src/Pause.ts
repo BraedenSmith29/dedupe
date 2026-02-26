@@ -75,6 +75,11 @@ class Pause {
         const pause = await this.getPause();
         return {...pause, isCurrentlyPaused: pause.pauseStatus !== null};
     }
+
+    static async isPaused(): Promise<boolean> {
+        const pauseData = await this.getCurrentPauseData();
+        return pauseData.isCurrentlyPaused;
+    }
 }
 
 export default Pause;

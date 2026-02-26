@@ -86,6 +86,10 @@ browser.webRequest.onBeforeRequest.addListener(
 
     const currentTab = await browser.tabs.get(requestDetails.tabId).catch(() => null) as (browser.tabs.Tab & { id: number } | null);
     if (!currentTab) return allowRequest(requestDetails.tabId);
+    
+    if (await Pause.isPaused()) {
+      return allowRequest(requestDetails.tabId, currentTab.windowId);
+    }
 
     if (isReloadingTab(currentTab, requestDetails.url)) {
       return allowRequest(requestDetails.tabId, currentTab.windowId);
