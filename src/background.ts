@@ -1,5 +1,5 @@
 import Pause from "./Pause";
-import Settings from "./Settings";
+import Settings, { SwitchBehavior } from "./Settings";
 
 browser.runtime.onStartup.addListener(async () => {
   const pauseStatus = (await Pause.getPause()).pauseStatus;
@@ -65,9 +65,16 @@ function isRedirect(tab: browser.tabs.Tab) {
   return tab.url !== 'about:blank' && !isOpenedInNewTabInSameWindow(tab) && !isOpenedInNewWindow(tab) && !isFirstNavigationInFreshTab(tab);
 }
 
+// Helps track if a refocus occurs in the middle of a webRequest
+let refocusTracker = false;
+browser.windows.onFocusChanged.addListener(() => {
+  refocusTracker = true;
+});
+
 browser.webRequest.onBeforeRequest.addListener(
   async (requestDetails) => {
     const sourceWindowId = currentFocusedWindowId;
+    refocusTracker = false;
 
     const allowRequest = (tabId: number | null = null, windowId: number | null = null) => {
       if (tabId !== null) newTabs.delete(tabId);
@@ -77,7 +84,7 @@ browser.webRequest.onBeforeRequest.addListener(
 
     if (requestDetails.tabId === -1) return allowRequest();
 
-    const currentTab = await browser.tabs.get(requestDetails.tabId).catch(() => null);
+    const currentTab = await browser.tabs.get(requestDetails.tabId).catch(() => null) as (browser.tabs.Tab & { id: number } | null);
     if (!currentTab) return allowRequest(requestDetails.tabId);
 
     if (isReloadingTab(currentTab, requestDetails.url)) {
@@ -104,12 +111,42 @@ browser.webRequest.onBeforeRequest.addListener(
     const existingTab = await findExistingTab(requestDetails.url, currentTab.id, sourceWindowId);
     if (!existingTab) return allowRequest(requestDetails.tabId, currentTab.windowId);
 
-    const tabSwitched = await switchToTab(existingTab);
-    if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
+    let switchBehavior: SwitchBehavior;
+    if (currentTab.windowId === existingTab.windowId || isOpenedInNewWindow(currentTab)) {
+      switchBehavior = settings.onDuplicateTabFoundInSameWindow;
+    } else {
+      switchBehavior = settings.onDuplicateTabFoundInOtherWindow;
+    }
 
-    await closeTab(requestDetails.tabId, requestDetails.url);
-
-    return { cancel: true };
+    let tabSwitched = false;
+    switch (switchBehavior) {
+      case 'deleteOldAndSwitch':
+        tabSwitched = await switchToTab(currentTab);
+        if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
+      case 'deleteOld':
+        if (!tabSwitched && isOpenedInNewWindow(currentTab)) {
+          if (refocusTracker) {
+            await browser.windows.update(sourceWindowId, { focused: true });
+          } else {
+            const overrideFocusListener = async () => {
+              await browser.windows.update(sourceWindowId, { focused: true });
+              browser.windows.onFocusChanged.removeListener(overrideFocusListener);
+            };
+            browser.windows.onFocusChanged.addListener(overrideFocusListener);
+          }
+        }
+        if (!isRedirect(currentTab)) await closeTab(existingTab.id, existingTab.url ?? 'about:blank');
+        return allowRequest(requestDetails.tabId, currentTab.windowId);
+      case 'deleteNewAndSwitch':
+        tabSwitched = await switchToTab(existingTab);
+        if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
+      case 'deleteNew':
+        if (!isRedirect(currentTab)) await closeTab(currentTab.id, requestDetails.url);
+        return { cancel: true };
+      default:
+        // Should never reach here since settings are validated, but just in case:
+        return allowRequest(requestDetails.tabId, currentTab.windowId);
+    }
   },
   { urls: ["<all_urls>"], types: ["main_frame"] },
   ["blocking"]
@@ -146,7 +183,7 @@ async function findExistingTab(url: string, currentTabId: number | undefined, so
     if (tab.url && tab.id !== currentTabId) {
       const tabComparisonUrl = await getComparisonUrl(tab.url);
       if (tabComparisonUrl === targetUrl) {
-        return tab;
+        return tab as browser.tabs.Tab & { id: number };
       }
     }
   }

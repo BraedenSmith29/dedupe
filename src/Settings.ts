@@ -1,4 +1,4 @@
-export type SwitchBehavior = 'keepOld' | 'keepOldAndSwitch' | 'keepNew' | 'keepNewAndSwitch';
+export type SwitchBehavior = 'deleteNew' | 'deleteNewAndSwitch' | 'deleteOld' | 'deleteOldAndSwitch';
 
 interface SettingsData {
     pauseTimePresets: [number, number];
@@ -25,8 +25,8 @@ class Settings {
         checkWhenOpeningNewWindow: false,
         checkWhenFirstNavigationInFreshTab: false,
         removeDeduplicatedTabsFromHistory: true,
-        onDuplicateTabFoundInSameWindow: 'keepOldAndSwitch',
-        onDuplicateTabFoundInOtherWindow: 'keepOldAndSwitch',
+        onDuplicateTabFoundInSameWindow: 'deleteNewAndSwitch',
+        onDuplicateTabFoundInOtherWindow: 'deleteNewAndSwitch',
         ignoreQuery: false,
         ignoreHash: false,
         darkMode: false,
@@ -70,7 +70,7 @@ class Settings {
     private static validateSettings(setting: SettingsData): boolean {
         const pauseTimePresetsValidator = (v: unknown) => Array.isArray(v) && v.length === 2 && v.every(n => typeof n === 'number');
         const booleanValidator = (v: unknown) => typeof v === 'boolean';
-        const switchBehaviorValidator = (v: unknown) => ['keepOld', 'keepOldAndSwitch', 'keepNew', 'keepNewAndSwitch'].includes(v as string);
+        const switchBehaviorValidator = (v: unknown) => ['deleteNew', 'deleteNewAndSwitch', 'deleteOld', 'deleteOldAndSwitch'].includes(v as string);
 
         if (!pauseTimePresetsValidator(setting.pauseTimePresets)) return false;
         if (!booleanValidator(setting.deduplicateInAllWindows)) return false;
