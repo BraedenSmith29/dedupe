@@ -112,8 +112,8 @@ browser.webRequest.onBeforeRequest.addListener(
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
 
-    const existingTab = await findExistingTab(requestDetails.url, currentTab.id, sourceWindowId);
-    if (!existingTab) return allowRequest(requestDetails.tabId, currentTab.windowId);
+    const existingTabs = await findExistingTabs(requestDetails.url, currentTab.id, sourceWindowId);
+    if (existingTabs.length === 0) return allowRequest(requestDetails.tabId, currentTab.windowId);
 
     let tabSwitched = false;
     switch (settings.switchBehavior) {
@@ -125,20 +125,28 @@ browser.webRequest.onBeforeRequest.addListener(
           if (refocusTracker) {
             await browser.windows.update(sourceWindowId, { focused: true });
           } else {
-            const overrideFocusListener = async () => {
-              await browser.windows.update(sourceWindowId, { focused: true });
-              browser.windows.onFocusChanged.removeListener(overrideFocusListener);
+            const overrideFocusListener = async (windowId: number) => {
+              if (windowId !== -1) {
+                await browser.windows.update(sourceWindowId, { focused: true });
+                browser.windows.onFocusChanged.removeListener(overrideFocusListener);
+              }
             };
             browser.windows.onFocusChanged.addListener(overrideFocusListener);
           }
         }
-        if (!isRedirect(currentTab)) await closeTab(existingTab.id, existingTab.url ?? 'about:blank');
+        if (!isRedirect(currentTab)) {
+          existingTabs.forEach(async (existingTab) => {
+            if (existingTab.id && !existingTab.pinned) {
+              await closeTab(existingTab.id, existingTab.url ?? 'about:blank');
+            }
+          });
+        }
         return allowRequest(requestDetails.tabId, currentTab.windowId);
       case 'deleteNewAndSwitch':
-        tabSwitched = await switchToTab(existingTab);
+        tabSwitched = await switchToTab(existingTabs[0]);
         if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
       case 'deleteNew':
-        if (!isRedirect(currentTab)) await closeTab(currentTab.id, requestDetails.url);
+        if (!isRedirect(currentTab) && !currentTab.pinned) await closeTab(currentTab.id, requestDetails.url);
         return { cancel: true };
       default:
         // Should never reach here since settings are validated, but just in case:
@@ -167,7 +175,7 @@ async function getComparisonUrl(url: string) {
   }
 }
 
-async function findExistingTab(url: string, currentTabId: number | undefined, sourceWindowId: number) {
+async function findExistingTabs(url: string, currentTabId: number | undefined, sourceWindowId: number) {
   const targetUrl = await getComparisonUrl(url);
 
   let query = {};
@@ -176,16 +184,27 @@ async function findExistingTab(url: string, currentTabId: number | undefined, so
   }
 
   const allTabs = await browser.tabs.query(query);
-  for (const tab of allTabs) {
-    if (tab.url && tab.id !== currentTabId) {
-      const tabComparisonUrl = await getComparisonUrl(tab.url);
-      if (tabComparisonUrl === targetUrl) {
-        return tab as browser.tabs.Tab & { id: number };
-      }
-    }
-  }
+  const tabMatchMap = await Promise.all(
+    allTabs.map(async (tab) => ({
+      value: tab,
+      include: tab.url && tab.id !== currentTabId ? await getComparisonUrl(tab.url) === targetUrl : false
+    }))
+  );
+  const existingTabs = tabMatchMap.filter((x) => x.include).map((x) => x.value);
 
-  return null;
+  // Sort to priotize pinned tabs, then winows with the sourceWindowId, then most recently active tabs
+  return existingTabs.sort((a, b) => {
+    if (a.pinned !== b.pinned) {
+      return a.pinned ? -1 : 1;
+    }
+    if (a.windowId === sourceWindowId && b.windowId !== sourceWindowId) {
+      return -1;
+    }
+    if (a.windowId !== sourceWindowId && b.windowId === sourceWindowId) {
+      return 1;
+    }
+    return (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0);
+  });
 }
 
 async function switchToTab(tab: browser.tabs.Tab) {
