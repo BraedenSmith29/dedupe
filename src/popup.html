@@ -41,7 +41,17 @@
     <!-- Duplicate Tabs Section -->
     <div class="section">
       <h2>Duplicate Tabs</h2>
-      <button id="deduplicateNow" class="secondary-btn">Deduplicate Open Tabs Now</button>
+      <button id="deduplicateAll" class="secondary-btn">Deduplicate Tabs Now</button>
+      <p class="duplicate-tabs-empty" id="duplicateTabsEmptyState" role="status" hidden>No duplicate tabs were detected.</p>
+      <ul class="duplicate-tabs-list" id="duplicateTabsList" aria-label="Duplicate tabs list" role="list"></ul>
+      <template id="duplicateTabItemTemplate">
+        <li class="tab-item">
+          <span class="tab-title" aria-label="Go to tab"></span>
+          <button class="tab-delete" type="button" aria-label="Delete tab">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" fill="none"/><line x1="200" y1="56" x2="56" y2="200" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="200" y1="200" x2="56" y2="56" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+          </button>
+        </li>
+      </template>
     </div>
   </div>
 

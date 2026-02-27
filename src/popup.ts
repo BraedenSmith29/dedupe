@@ -130,6 +130,130 @@ function getResumingCountdownText(pausedUntil: number): string {
   }
 }
 
+type DuplicateTabItem = {
+  tabId: number;
+  windowId: number;
+  index: number;
+  title: string;
+  url: string;
+};
+
+async function getDuplicateTabs(): Promise<DuplicateTabItem[][]> {
+  const currentWindowId = await browser.windows.getCurrent().then(w => w.id);
+
+  const tabs = await browser.tabs.query({});
+  const sortedTabs = new Map<string, DuplicateTabItem[]>();
+  const duplicateUrls: string[] = [];
+
+  for (const tab of tabs) {
+    if (!tab.id || !tab.windowId || !tab.url) continue;
+
+    const otherUrls = sortedTabs.get(tab.url) ?? [];
+    otherUrls.push({
+      tabId: tab.id,
+      windowId: tab.windowId,
+      title: tab.title || "Untitled",
+      url: tab.url,
+      index: tab.index,
+    });
+
+    otherUrls.sort((a, b) => {
+      if (a.windowId === b.windowId) return a.index - b.index;
+      if (a.windowId === currentWindowId) return -1;
+      if (b.windowId === currentWindowId) return 1;
+      return a.windowId - b.windowId;
+    })
+
+    sortedTabs.set(tab.url, otherUrls);
+
+    if (otherUrls.length === 2) {
+      duplicateUrls.push(tab.url);
+    }
+  }
+
+  return [...sortedTabs.values()].filter(group => group.length > 1);
+}
+
+function updateDuplicateTabsListState(): void {
+  const list = document.getElementById('duplicateTabsList') as HTMLUListElement | null;
+  const emptyState = document.getElementById('duplicateTabsEmptyState') as HTMLElement | null;
+  const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
+  if (!list || !emptyState || !deduplicateAllButton) return;
+
+  emptyState.hidden = list.childNodes.length > 0;
+  deduplicateAllButton.disabled = list.childNodes.length === 0;
+}
+
+async function renderDuplicateTabs(): Promise<void> {
+  const list = document.getElementById('duplicateTabsList') as HTMLUListElement | null;
+  const template = document.getElementById('duplicateTabItemTemplate') as HTMLTemplateElement | null;
+  const emptyState = document.getElementById('duplicateTabsEmptyState') as HTMLElement | null;
+  const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
+  if (!list || !template || !emptyState || !deduplicateAllButton) return;
+
+  const duplicateGroups = await getDuplicateTabs();
+  const listItems: HTMLElement[] = [];
+  for (const group of duplicateGroups) {
+    const currentGroupItems: HTMLElement[] = [];
+    for (const item of group) {
+      const row = template.content.firstElementChild?.cloneNode(true) as HTMLElement | null;
+      if (!row) continue;
+
+      const title = row.querySelector('.tab-title') as HTMLElement | null;
+      const deleteButton = row.querySelector('.tab-delete') as HTMLButtonElement | null;
+      if (!title || !deleteButton) continue;
+
+      row.setAttribute('data-tab-id', item.tabId.toString());
+      title.textContent = item.title;
+      title.setAttribute('aria-label', `Go to tab: ${item.title}`);
+      deleteButton.setAttribute('aria-label', `Delete tab: ${item.title}`);
+
+      title.addEventListener('click', () => {
+        browser.tabs.update(item.tabId, { active: true });
+        browser.windows.update(item.windowId, { focused: true });
+      });
+
+      deleteButton.addEventListener('click', () => {
+        if (group.length === 2) {
+          currentGroupItems.forEach(i => i.remove());
+        } else {
+          row.remove();
+        }
+        updateDuplicateTabsListState();
+        browser.tabs.remove(item.tabId);
+      });
+
+      currentGroupItems.push(row);
+      listItems.push(row);
+    }
+  }
+
+  list.replaceChildren(...listItems);
+  updateDuplicateTabsListState();
+}
+
+async function setUpTabDeduplication() {
+  const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
+  if (!deduplicateAllButton) return;
+  
+  deduplicateAllButton.addEventListener('click', async () => {
+    const duplicateTabs = await getDuplicateTabs();
+    for (const group of duplicateTabs) {
+      // Remove all but the first tab in each group
+      group.slice(1).forEach(tab => {
+        browser.tabs.remove(tab.tabId);
+      });
+    }
+    document.getElementById('duplicateTabsList')?.replaceChildren();
+    updateDuplicateTabsListState();
+  });
+
+  await renderDuplicateTabs();
+  browser.tabs.onCreated.addListener(renderDuplicateTabs);
+  browser.tabs.onRemoved.addListener(renderDuplicateTabs);
+  browser.tabs.onUpdated.addListener(renderDuplicateTabs);
+}
+
 async function setDarkMode(): Promise<void> {
   if (await Settings.getDarkMode()) {
     document.documentElement.setAttribute('data-theme', 'dark');
@@ -267,6 +391,7 @@ function setUpResetSettingsHandler(): void {
 document.addEventListener('DOMContentLoaded', async () => {
   setupSettingsToggle();
   await setUpPausing();
+  await setUpTabDeduplication();
 
   await setDarkMode();
   await setUpBasicSettingsHandlers();

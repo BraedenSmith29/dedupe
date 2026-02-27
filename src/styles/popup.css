@@ -174,6 +174,78 @@ body {
   font-size: 13px;
 }
 
+/* Duplicate Tabs */
+.duplicate-tabs-empty {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.duplicate-tabs-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-inline-start: 0;
+}
+
+.duplicate-tabs-list:empty {
+  display: none;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tab-title {
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+  max-width: fit-content;
+  padding-right: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.tab-title:hover {
+  color: var(--color-primary);
+}
+
+.tab-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.tab-delete:hover {
+  color: var(--color-primary);
+}
+
+.tab-delete:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.tab-delete svg {
+  width: 16px;
+  height: 16px;
+}
+
 #customPauseDurationContainer {
   display: flex;
   gap: 8px;
@@ -248,6 +320,15 @@ button {
   background: var(--color-primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--color-primary-shadow);
+}
+
+.secondary-btn:disabled,
+.secondary-btn:disabled:hover {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-primary);
+  transform: none;
+  box-shadow: none;
 }
 
 select,
