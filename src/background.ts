@@ -1,5 +1,5 @@
 import Pause from "./Pause";
-import Settings, { SwitchBehavior } from "./Settings";
+import Settings from "./Settings";
 
 browser.runtime.onStartup.addListener(async () => {
   const pauseStatus = (await Pause.getPause()).pauseStatus;
@@ -115,15 +115,8 @@ browser.webRequest.onBeforeRequest.addListener(
     const existingTab = await findExistingTab(requestDetails.url, currentTab.id, sourceWindowId);
     if (!existingTab) return allowRequest(requestDetails.tabId, currentTab.windowId);
 
-    let switchBehavior: SwitchBehavior;
-    if (currentTab.windowId === existingTab.windowId || isOpenedInNewWindow(currentTab)) {
-      switchBehavior = settings.onDuplicateTabFoundInSameWindow;
-    } else {
-      switchBehavior = settings.onDuplicateTabFoundInOtherWindow;
-    }
-
     let tabSwitched = false;
-    switch (switchBehavior) {
+    switch (settings.switchBehavior) {
       case 'deleteOldAndSwitch':
         tabSwitched = await switchToTab(currentTab);
         if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);

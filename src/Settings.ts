@@ -8,8 +8,7 @@ interface SettingsData {
     checkWhenOpeningNewWindow: boolean;
     checkWhenFirstNavigationInFreshTab: boolean;
     removeDeduplicatedTabsFromHistory: boolean;
-    onDuplicateTabFoundInSameWindow: SwitchBehavior;
-    onDuplicateTabFoundInOtherWindow: SwitchBehavior;
+    switchBehavior: SwitchBehavior;
     ignoreQuery: boolean;
     ignoreHash: boolean;
     darkMode: boolean;
@@ -25,8 +24,7 @@ class Settings {
         checkWhenOpeningNewWindow: false,
         checkWhenFirstNavigationInFreshTab: false,
         removeDeduplicatedTabsFromHistory: true,
-        onDuplicateTabFoundInSameWindow: 'deleteNewAndSwitch',
-        onDuplicateTabFoundInOtherWindow: 'deleteNewAndSwitch',
+        switchBehavior: 'deleteNewAndSwitch',
         ignoreQuery: false,
         ignoreHash: false,
         darkMode: false,
@@ -79,8 +77,7 @@ class Settings {
         if (!booleanValidator(setting.checkWhenOpeningNewWindow)) return false;
         if (!booleanValidator(setting.checkWhenFirstNavigationInFreshTab)) return false;
         if (!booleanValidator(setting.removeDeduplicatedTabsFromHistory)) return false;
-        if (!switchBehaviorValidator(setting.onDuplicateTabFoundInSameWindow)) return false;
-        if (!switchBehaviorValidator(setting.onDuplicateTabFoundInOtherWindow)) return false;
+        if (!switchBehaviorValidator(setting.switchBehavior)) return false;
         if (!booleanValidator(setting.ignoreQuery)) return false;
         if (!booleanValidator(setting.ignoreHash)) return false;
         if (!booleanValidator(setting.darkMode)) return false;
@@ -178,22 +175,13 @@ class Settings {
         await this.setSettings({ removeDeduplicatedTabsFromHistory });
     }
 
-    static async getOnDuplicateTabFoundInSameWindow(): Promise<SwitchBehavior> {
+    static async getSwitchBehavior(): Promise<SwitchBehavior> {
         const settings = await this.getSettings();
-        return settings.onDuplicateTabFoundInSameWindow;
+        return settings.switchBehavior;
     }
 
-    static async setOnDuplicateTabFoundInSameWindow(onDuplicateTabFoundInSameWindow: SwitchBehavior): Promise<void> {
-        await this.setSettings({ onDuplicateTabFoundInSameWindow });
-    }
-
-    static async getOnDuplicateTabFoundInOtherWindow(): Promise<SwitchBehavior> {
-        const settings = await this.getSettings();
-        return settings.onDuplicateTabFoundInOtherWindow;
-    }
-
-    static async setOnDuplicateTabFoundInOtherWindow(onDuplicateTabFoundInOtherWindow: SwitchBehavior): Promise<void> {
-        await this.setSettings({ onDuplicateTabFoundInOtherWindow });
+    static async setSwitchBehavior(switchBehavior: SwitchBehavior): Promise<void> {
+        await this.setSettings({ switchBehavior });
     }
 
     static async getIgnoreQuery(): Promise<boolean> {

@@ -92,22 +92,13 @@
         <input type="checkbox" id="removeDeduplicatedTabsFromHistory" />
         <label for="removeDeduplicatedTabsFromHistory">Remove deduplicated tabs from history</label>
       </div>
-      <div class="setting-item">
-        <label for="sameWindowBehavior">When a duplicate tab is found in the same window:</label>
-        <select id="sameWindowBehavior">
-          <option value="deleteNew">Delete the new tab</option>
-          <option value="deleteNewAndSwitch">Delete the new tab and switch to the old tab</option>
-          <option value="deleteOld">Delete the old tab</option>
-          <option value="deleteOldAndSwitch">Delete the old tab and switch to the new tab</option>
-        </select>
-      </div>
       <div class="setting-item checkbox">
         <input type="checkbox" id="deduplicateInAllWindows" />
         <label for="deduplicateInAllWindows">Deduplicate tabs in all windows</label>
       </div>
       <div class="setting-item">
-        <label for="otherWindowBehavior">When a duplicate tab is found in another window:</label>
-        <select id="otherWindowBehavior">
+        <label for="switchBehavior">When a duplicate tab is found:</label>
+        <select id="switchBehavior">
           <option value="deleteNew">Delete the new tab</option>
           <option value="deleteNewAndSwitch">Delete the new tab and switch to the old tab</option>
           <option value="deleteOld">Delete the old tab</option>

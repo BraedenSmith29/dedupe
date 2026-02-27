@@ -269,8 +269,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   const checkWhenOpeningNewWindow = document.getElementById('checkWhenOpeningNewWindow') as HTMLInputElement;
   const checkWhenFirstNavigationInFreshTab = document.getElementById('checkWhenFirstNavigationInFreshTab') as HTMLInputElement;
   const removeDeduplicatedTabsFromHistory = document.getElementById('removeDeduplicatedTabsFromHistory') as HTMLInputElement;
-  const sameWindowBehavior = document.getElementById('sameWindowBehavior') as HTMLSelectElement;
-  const otherWindowBehavior = document.getElementById('otherWindowBehavior') as HTMLSelectElement;
+  const switchBehavior = document.getElementById('switchBehavior') as HTMLSelectElement;
   const ignoreQueryParams = document.getElementById('ignoreQueryParams') as HTMLInputElement;
   const ignoreHash = document.getElementById('ignoreHash') as HTMLInputElement;
   const darkMode = document.getElementById('darkMode') as HTMLInputElement;
@@ -282,13 +281,10 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   checkWhenOpeningNewWindow.checked = settings.checkWhenOpeningNewWindow;
   checkWhenFirstNavigationInFreshTab.checked = settings.checkWhenFirstNavigationInFreshTab;
   removeDeduplicatedTabsFromHistory.checked = settings.removeDeduplicatedTabsFromHistory;
-  sameWindowBehavior.value = settings.onDuplicateTabFoundInSameWindow;
-  otherWindowBehavior.value = settings.onDuplicateTabFoundInOtherWindow;
+  switchBehavior.value = settings.switchBehavior;
   ignoreQueryParams.checked = settings.ignoreQuery;
   ignoreHash.checked = settings.ignoreHash;
   darkMode.checked = settings.darkMode;
-
-  (otherWindowBehavior.closest('.setting-item') as HTMLElement).hidden = !settings.deduplicateInAllWindows;
 
   const handleChange = async () => {
     await Settings.setSettings({
@@ -298,13 +294,11 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
       checkWhenOpeningNewWindow: checkWhenOpeningNewWindow.checked,
       checkWhenFirstNavigationInFreshTab: checkWhenFirstNavigationInFreshTab.checked,
       removeDeduplicatedTabsFromHistory: removeDeduplicatedTabsFromHistory.checked,
-      onDuplicateTabFoundInSameWindow: sameWindowBehavior.value as SwitchBehavior,
-      onDuplicateTabFoundInOtherWindow: otherWindowBehavior.value as SwitchBehavior,
+      switchBehavior: switchBehavior.value as SwitchBehavior,
       ignoreQuery: ignoreQueryParams.checked,
       ignoreHash: ignoreHash.checked,
       darkMode: darkMode.checked,
     });
-    (otherWindowBehavior.closest('.setting-item') as HTMLElement).hidden = !deduplicateInAllWindows.checked;
     await setDarkMode();
   };
 
@@ -314,8 +308,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   checkWhenOpeningNewWindow.addEventListener('change', handleChange);
   checkWhenFirstNavigationInFreshTab.addEventListener('change', handleChange);
   removeDeduplicatedTabsFromHistory.addEventListener('change', handleChange);
-  sameWindowBehavior.addEventListener('change', handleChange);
-  otherWindowBehavior.addEventListener('change', handleChange);
+  switchBehavior.addEventListener('change', handleChange);
   ignoreQueryParams.addEventListener('change', handleChange);
   ignoreHash.addEventListener('change', handleChange);
   darkMode.addEventListener('change', handleChange);
