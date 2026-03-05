@@ -1,16 +1,15 @@
 import Pause from "./Pause";
 import Settings from "./Settings";
 
-browser.runtime.onStartup.addListener(async () => {
-  const pauseStatus = (await Pause.getPause()).pauseStatus;
-  if (pauseStatus === 'session') {
-    await Pause.unpause();
-  }
-});
+async function init() {
 
-browser.runtime.onMessage.addListener(async (message) => {
-  if (message.action === 'updatedSettings') {
-    Settings.clearCache();
+const settings = await Settings.create();
+const pause = await Pause.create();
+
+browser.runtime.onStartup.addListener(async () => {
+  // TODO: Make sure this works since it's added in an asynchronous context.
+  if (pause.getPauseStatus() === 'session') {
+    await pause.unpause();
   }
 });
 
@@ -87,7 +86,7 @@ browser.webRequest.onBeforeRequest.addListener(
     const currentTab = await browser.tabs.get(requestDetails.tabId).catch(() => null) as (browser.tabs.Tab & { id: number } | null);
     if (!currentTab) return allowRequest(requestDetails.tabId);
     
-    if (await Pause.isPaused()) {
+    if (pause.isPaused()) {
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
 
@@ -98,17 +97,16 @@ browser.webRequest.onBeforeRequest.addListener(
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
 
-    const settings = await Settings.getSettings();
-    if (isFirstNavigationInFreshTab(currentTab) && !settings.checkWhenFirstNavigationInFreshTab) {
+    if (isFirstNavigationInFreshTab(currentTab) && !settings.getCheckWhenFirstNavigationInFreshTab()) {
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
-    if (isOpenedInNewWindow(currentTab) && !settings.checkWhenOpeningNewWindow) {
+    if (isOpenedInNewWindow(currentTab) && !settings.getCheckWhenOpeningNewWindow()) {
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
-    if (isOpenedInNewTabInSameWindow(currentTab) && !settings.checkWhenOpeningNewTab) {
+    if (isOpenedInNewTabInSameWindow(currentTab) && !settings.getCheckWhenOpeningNewTab()) {
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
-    if (isRedirect(currentTab) && !settings.checkWhenRedirecting) {
+    if (isRedirect(currentTab) && !settings.getCheckWhenRedirecting()) {
       return allowRequest(requestDetails.tabId, currentTab.windowId);
     }
 
@@ -116,7 +114,7 @@ browser.webRequest.onBeforeRequest.addListener(
     if (existingTabs.length === 0) return allowRequest(requestDetails.tabId, currentTab.windowId);
 
     let tabSwitched = false;
-    switch (settings.switchBehavior) {
+    switch (settings.getSwitchBehavior()) {
       case 'deleteOldAndSwitch':
         tabSwitched = await switchToTab(currentTab);
         if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
@@ -157,14 +155,14 @@ browser.webRequest.onBeforeRequest.addListener(
   ["blocking"]
 );
 
-async function getComparisonUrl(url: string) {
+function getComparisonUrl(url: string) {
   try {
     const parsedUrl = new URL(url);
 
-    if (await Settings.getIgnoreQuery()) {
+    if (settings.getIgnoreQuery()) {
       parsedUrl.search = '';
     }
-    if (await Settings.getIgnoreHash()) {
+    if (settings.getIgnoreHash()) {
       parsedUrl.hash = '';
     }
 
@@ -176,21 +174,19 @@ async function getComparisonUrl(url: string) {
 }
 
 async function findExistingTabs(url: string, currentTabId: number | undefined, sourceWindowId: number) {
-  const targetUrl = await getComparisonUrl(url);
+  const targetUrl = getComparisonUrl(url);
 
   let query = {};
-  if (!(await Settings.getDeduplicateInAllWindows())) {
+  if (!settings.getDeduplicateInAllWindows()) {
     query = { windowId: sourceWindowId };
   }
 
   const allTabs = await browser.tabs.query(query);
-  const tabMatchMap = await Promise.all(
-    allTabs.map(async (tab) => ({
-      value: tab,
-      include: tab.url && tab.id !== currentTabId ? await getComparisonUrl(tab.url) === targetUrl : false
-    }))
-  );
-  const existingTabs = tabMatchMap.filter((x) => x.include).map((x) => x.value);
+  const existingTabs = allTabs.filter(tab => {
+    if (!tab.url) return false;
+    if (tab.id === currentTabId) return false;
+    return getComparisonUrl(tab.url) === targetUrl;
+  });
 
   // Sort to priotize pinned tabs, then winows with the sourceWindowId, then most recently active tabs
   return existingTabs.sort((a, b) => {
@@ -218,8 +214,12 @@ async function switchToTab(tab: browser.tabs.Tab) {
 }
 
 async function closeTab(tabId: number, targetUrl: string) {
-  if (!(await Settings.getRemoveDeduplicatedTabsFromHistory())) {
+  if (!settings.getRemoveDeduplicatedTabsFromHistory()) {
     await browser.tabs.update(tabId, { url: targetUrl });
   }
   await browser.tabs.remove(tabId);
 }
+
+}
+
+init();

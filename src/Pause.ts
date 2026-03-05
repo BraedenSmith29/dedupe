@@ -1,3 +1,5 @@
+import StorageCache from './StorageCache';
+
 export type PausedStatus = 'session' | 'permanently' | 'preset0' | 'preset1' | 'custom' | null;
 
 interface PauseData {
@@ -5,40 +7,25 @@ interface PauseData {
     pausedUntil: number | null;
 }
 
-class Pause {
+class Pause extends StorageCache<PauseData> {
     private static readonly STORAGE_KEY = 'dedupePause';
     private static readonly UNPAUSED: PauseData = {
         pauseStatus: null,
         pausedUntil: null,
     };
 
-    private static cache: PauseData | null = null;
-
-    static async load(): Promise<PauseData> {
-        try {
-            const stored = await browser.storage.local.get(this.STORAGE_KEY);
-            return stored[this.STORAGE_KEY] || this.UNPAUSED;
-        } catch {
-            return this.UNPAUSED;
-        }
+    private constructor() {
+        super(Pause.STORAGE_KEY, Pause.UNPAUSED);
     }
 
-    static async save(pause: PauseData): Promise<void> {
-        this.cache = pause;
-        await browser.storage.local.set({ [this.STORAGE_KEY]: pause });
-    }
-
-    static async unpause(): Promise<void> {
-        await this.save(this.UNPAUSED);
-    }
-
-    static async getPause(): Promise<PauseData> {
-        if (this.cache) {
-            return this.cache;
-        }
-        const pause = await this.load();
-        this.cache = pause;
+    static async create(): Promise<Pause> {
+        const pause = new Pause();
+        await pause.load();
         return pause;
+    }
+
+    async unpause(): Promise<void> {
+        await this.reset();
     }
 
     private static validatePause(setting: PauseData): boolean {
@@ -51,34 +38,38 @@ class Pause {
         return true;
     }
 
-    static async setPause(updatedPause: PauseData): Promise<void> {
-        if (!this.validatePause(updatedPause)) {
+    async setPause(updatedPause: PauseData): Promise<void> {
+        if (!Pause.validatePause(updatedPause)) {
             throw new Error('Invalid pause data');
         }
         await this.save(updatedPause);
     }
 
-    private static async checkForUnpause(): Promise<void> {
-        const pause = await this.getPause();
+    private getCurrentPauseData(): PauseData {
+        const pause = this.getFromCache();
         
         if (pause.pauseStatus === null || !['preset0', 'preset1', 'custom'].includes(pause.pauseStatus)) {
-            return;
+            return pause;
         }
 
         if (pause.pausedUntil === null || Date.now() >= pause.pausedUntil) {
-            await this.unpause();
+            this.unpause();
+            return Pause.UNPAUSED;
         }
+
+        return pause;
     }
 
-    static async getCurrentPauseData(): Promise<PauseData & { isCurrentlyPaused: boolean }> {
-        await this.checkForUnpause();
-        const pause = await this.getPause();
-        return {...pause, isCurrentlyPaused: pause.pauseStatus !== null};
+    getPauseStatus(): PausedStatus {
+        return this.getCurrentPauseData().pauseStatus;
     }
 
-    static async isPaused(): Promise<boolean> {
-        const pauseData = await this.getCurrentPauseData();
-        return pauseData.isCurrentlyPaused;
+    getPausedUntil(): number | null {
+        return this.getCurrentPauseData().pausedUntil;
+    }
+
+    isPaused(): boolean {
+        return this.getPauseStatus() !== null;
     }
 }
 

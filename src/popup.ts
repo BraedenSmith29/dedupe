@@ -1,6 +1,11 @@
 import Pause, { PausedStatus } from "./Pause.js";
 import Settings, { SwitchBehavior } from "./Settings.js";
 
+async function init() {
+
+const settings = await Settings.create();
+const pause = await Pause.create();
+
 function setupSettingsToggle(): void {
   const settingsToggle = document.getElementById('settingsToggle') as HTMLElement;
   const settingsSection = document.getElementById('settings') as HTMLElement;
@@ -15,15 +20,15 @@ function setupSettingsToggle(): void {
   });
 }
 
-async function setUpPausing(): Promise<void> {
+function setUpPausing(): void {
   const buttons = document.querySelectorAll('.apply-pause');
   buttons.forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
 
       if (btn.classList.contains('selected')) {
-        await Pause.unpause();
-        await updatePauseStatus();
+        await pause.unpause();
+        updatePauseStatus();
         return;
       }
 
@@ -36,11 +41,11 @@ async function setUpPausing(): Promise<void> {
       let pauseMinutes;
       if (duration === 'preset0' || duration === 'preset1') {
         const index = parseInt(btn.getAttribute('data-index') || '', 10);
-        if (isNaN(index) || index < 0) {
+        if (isNaN(index) || (index !== 0 && index !== 1)) {
           console.error('Invalid data-index value');
           return;
         }
-        pauseMinutes = await Settings.getPauseTimePreset(index);
+        pauseMinutes = settings.getPauseTimePreset(index);
       } else if (duration === 'custom') {
         const customDurationInput = document.getElementById('customPauseDuration') as HTMLInputElement;
         pauseMinutes = parseInt(customDurationInput.value, 10);
@@ -53,11 +58,11 @@ async function setUpPausing(): Promise<void> {
       const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
       customPauseDurationContainer.hidden = true;
 
-      await Pause.setPause({
+      await pause.setPause({
         pauseStatus: duration as PausedStatus,
         pausedUntil: pauseMinutes ? Date.now() + pauseMinutes * 60000 : null,
       });
-      await updatePauseStatus();
+      updatePauseStatus();
     });
   });
   
@@ -65,31 +70,30 @@ async function setUpPausing(): Promise<void> {
   customButton?.addEventListener('click', async () => {
     const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
     if (customButton.classList.contains('selected') || !customPauseDurationContainer.hidden) {
-      await Pause.unpause();
-      await updatePauseStatus();
+      await pause.unpause();
+      updatePauseStatus();
       customPauseDurationContainer.hidden = true;
     } else {
       customPauseDurationContainer.hidden = false;
     }
   });
 
-  await updatePauseStatus();
+  updatePauseStatus();
   setInterval(updatePauseStatus, 1000);
 }
 
-async function updatePauseStatus(): Promise<void> {
+function updatePauseStatus(): void {
   const statusBadge = document.getElementById('statusBadge') as HTMLElement;
   const pauseStatusLabel = document.getElementById('pauseStatus') as HTMLElement;
   const buttons = document.querySelectorAll('.pause-btn');
   
-  const currentPauseData = await Pause.getCurrentPauseData();
-
-  if (currentPauseData.isCurrentlyPaused) {
+  if (pause.isPaused()) {
     statusBadge.textContent = 'Paused';
     statusBadge.classList.add('paused');
 
-    if (currentPauseData.pausedUntil) {
-      pauseStatusLabel.textContent = getResumingCountdownText(currentPauseData.pausedUntil);
+    const pausedUntil = pause.getPausedUntil();
+    if (pausedUntil) {
+      pauseStatusLabel.textContent = getResumingCountdownText(pausedUntil);
       pauseStatusLabel.hidden = false;
     } else {
       pauseStatusLabel.hidden = true;
@@ -103,7 +107,7 @@ async function updatePauseStatus(): Promise<void> {
 
   buttons.forEach(btn => {
     const btnDuration = btn.getAttribute('data-duration');
-    if (btnDuration === currentPauseData.pauseStatus) {
+    if (btnDuration === pause.getPauseStatus()) {
       btn.classList.add('selected');
     } else {
       btn.classList.remove('selected');
@@ -232,7 +236,7 @@ async function renderDuplicateTabs(): Promise<void> {
   updateDuplicateTabsListState();
 }
 
-async function setUpTabDeduplication() {
+function setUpTabDeduplication() {
   const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
   if (!deduplicateAllButton) return;
   
@@ -248,21 +252,21 @@ async function setUpTabDeduplication() {
     updateDuplicateTabsListState();
   });
 
-  await renderDuplicateTabs();
+  renderDuplicateTabs();
   browser.tabs.onCreated.addListener(renderDuplicateTabs);
   browser.tabs.onRemoved.addListener(renderDuplicateTabs);
   browser.tabs.onUpdated.addListener(renderDuplicateTabs);
 }
 
-async function setDarkMode(): Promise<void> {
-  if (await Settings.getDarkMode()) {
+function setDarkMode(): void {
+  if (settings.getDarkMode()) {
     document.documentElement.setAttribute('data-theme', 'dark');
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
 }
 
-async function setUpBasicSettingsHandlers(): Promise<void> {
+function setUpBasicSettingsHandlers(): void {
   const deduplicateInAllWindows = document.getElementById('deduplicateInAllWindows') as HTMLInputElement;
   const checkWhenRedirecting = document.getElementById('checkWhenRedirecting') as HTMLInputElement;
   const checkWhenOpeningNewTab = document.getElementById('checkWhenOpeningNewTab') as HTMLInputElement;
@@ -274,20 +278,19 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   const ignoreHash = document.getElementById('ignoreHash') as HTMLInputElement;
   const darkMode = document.getElementById('darkMode') as HTMLInputElement;
 
-  const settings = await Settings.getSettings();
-  deduplicateInAllWindows.checked = settings.deduplicateInAllWindows;
-  checkWhenRedirecting.checked = settings.checkWhenRedirecting;
-  checkWhenOpeningNewTab.checked = settings.checkWhenOpeningNewTab;
-  checkWhenOpeningNewWindow.checked = settings.checkWhenOpeningNewWindow;
-  checkWhenFirstNavigationInFreshTab.checked = settings.checkWhenFirstNavigationInFreshTab;
-  removeDeduplicatedTabsFromHistory.checked = settings.removeDeduplicatedTabsFromHistory;
-  switchBehavior.value = settings.switchBehavior;
-  ignoreQueryParams.checked = settings.ignoreQuery;
-  ignoreHash.checked = settings.ignoreHash;
-  darkMode.checked = settings.darkMode;
+  deduplicateInAllWindows.checked = settings.getDeduplicateInAllWindows();
+  checkWhenRedirecting.checked = settings.getCheckWhenRedirecting();
+  checkWhenOpeningNewTab.checked = settings.getCheckWhenOpeningNewTab();
+  checkWhenOpeningNewWindow.checked = settings.getCheckWhenOpeningNewWindow();
+  checkWhenFirstNavigationInFreshTab.checked = settings.getCheckWhenFirstNavigationInFreshTab();
+  removeDeduplicatedTabsFromHistory.checked = settings.getRemoveDeduplicatedTabsFromHistory();
+  switchBehavior.value = settings.getSwitchBehavior();
+  ignoreQueryParams.checked = settings.getIgnoreQuery();
+  ignoreHash.checked = settings.getIgnoreHash();
+  darkMode.checked = settings.getDarkMode();
 
   const handleChange = async () => {
-    await Settings.setSettings({
+    await settings.setSettings({
       deduplicateInAllWindows: deduplicateInAllWindows.checked,
       checkWhenRedirecting: checkWhenRedirecting.checked,
       checkWhenOpeningNewTab: checkWhenOpeningNewTab.checked,
@@ -299,7 +302,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
       ignoreHash: ignoreHash.checked,
       darkMode: darkMode.checked,
     });
-    await setDarkMode();
+    setDarkMode();
   };
 
   deduplicateInAllWindows.addEventListener('change', handleChange);
@@ -314,7 +317,7 @@ async function setUpBasicSettingsHandlers(): Promise<void> {
   darkMode.addEventListener('change', handleChange);
 }
 
-async function setUpPauseSettingHandler(): Promise<void> {
+function setUpPauseSettingHandler(): void {
   const handleChange = async (event: Event) => {
     const target = event.currentTarget as HTMLInputElement;
     const duration = parseInt(target.value, 10);
@@ -333,22 +336,21 @@ async function setUpPauseSettingHandler(): Promise<void> {
       }
     }
     const index = parseInt(target.getAttribute('data-index') || '', 10);
-    if (isNaN(index) || index < 0) {
+    if (isNaN(index) || (index !== 0 && index !== 1)) {
       console.error('Invalid data-index value');
       return;
     }
-    await Settings.setPauseTimePreset(index, duration);
+    await settings.setPauseTimePreset(index, duration);
     setPauseTimePresetButtonLabel(index, duration);
   }
 
   const pauseTimePreset0 = document.getElementById('pauseTimePreset0') as HTMLInputElement;
   const pauseTimePreset1 = document.getElementById('pauseTimePreset1') as HTMLInputElement;
 
-  const settings = await Settings.getSettings();
-  pauseTimePreset0.value = settings.pauseTimePresets[0].toString();
-  pauseTimePreset1.value = settings.pauseTimePresets[1].toString();
-  setPauseTimePresetButtonLabel(0, settings.pauseTimePresets[0]);
-  setPauseTimePresetButtonLabel(1, settings.pauseTimePresets[1]);
+  pauseTimePreset0.value = settings.getPauseTimePreset(0).toString();
+  pauseTimePreset1.value = settings.getPauseTimePreset(1).toString();
+  setPauseTimePresetButtonLabel(0, settings.getPauseTimePreset(0));
+  setPauseTimePresetButtonLabel(1, settings.getPauseTimePreset(1));
   
   pauseTimePreset0.addEventListener('input', handleChange);
   pauseTimePreset1.addEventListener('input', handleChange);
@@ -374,21 +376,27 @@ function setUpResetSettingsHandler(): void {
   const resetButton = document.getElementById('resetSettings') as HTMLElement;
   resetButton.addEventListener('click', async () => {
     if (confirm('Are you sure you want to reset all settings to defaults?')) {
-      await Settings.reset();
+      await settings.reset();
       location.reload();
     }
   });
 }
 
+return () => {
+  setDarkMode();
+
+  setupSettingsToggle();
+  setUpPausing();
+  setUpTabDeduplication();
+
+  setUpBasicSettingsHandlers();
+  setUpPauseSettingHandler();
+  setUpResetSettingsHandler();
+}
+  
+}
+
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
-  setupSettingsToggle();
-  await setUpPausing();
-  await setUpTabDeduplication();
-
-  await setDarkMode();
-  await setUpBasicSettingsHandlers();
-  await setUpPauseSettingHandler();
-  setUpResetSettingsHandler();
+  (await init())();
 });
-  
