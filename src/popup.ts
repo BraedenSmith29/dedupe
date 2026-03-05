@@ -269,8 +269,8 @@ function setDarkMode(): void {
 function setUpBasicSettingsHandlers(): void {
   const deduplicateInAllWindows = document.getElementById('deduplicateInAllWindows') as HTMLInputElement;
   const checkWhenRedirecting = document.getElementById('checkWhenRedirecting') as HTMLInputElement;
-  const checkWhenOpeningNewTab = document.getElementById('checkWhenOpeningNewTab') as HTMLInputElement;
-  const checkWhenOpeningNewWindow = document.getElementById('checkWhenOpeningNewWindow') as HTMLInputElement;
+  const checkWhenOpeningLinkInNewTab = document.getElementById('checkWhenOpeningLinkInNewTab') as HTMLInputElement;
+  const checkWhenOpeningLinkInNewWindow = document.getElementById('checkWhenOpeningLinkInNewWindow') as HTMLInputElement;
   const checkWhenFirstNavigationInFreshTab = document.getElementById('checkWhenFirstNavigationInFreshTab') as HTMLInputElement;
   const removeDeduplicatedTabsFromHistory = document.getElementById('removeDeduplicatedTabsFromHistory') as HTMLInputElement;
   const switchBehavior = document.getElementById('switchBehavior') as HTMLSelectElement;
@@ -280,8 +280,8 @@ function setUpBasicSettingsHandlers(): void {
 
   deduplicateInAllWindows.checked = settings.getDeduplicateInAllWindows();
   checkWhenRedirecting.checked = settings.getCheckWhenRedirecting();
-  checkWhenOpeningNewTab.checked = settings.getCheckWhenOpeningNewTab();
-  checkWhenOpeningNewWindow.checked = settings.getCheckWhenOpeningNewWindow();
+  checkWhenOpeningLinkInNewTab.checked = settings.getCheckWhenOpeningLinkInNewTab();
+  checkWhenOpeningLinkInNewWindow.checked = settings.getCheckWhenOpeningLinkInNewWindow();
   checkWhenFirstNavigationInFreshTab.checked = settings.getCheckWhenFirstNavigationInFreshTab();
   removeDeduplicatedTabsFromHistory.checked = settings.getRemoveDeduplicatedTabsFromHistory();
   switchBehavior.value = settings.getSwitchBehavior();
@@ -293,8 +293,8 @@ function setUpBasicSettingsHandlers(): void {
     await settings.setSettings({
       deduplicateInAllWindows: deduplicateInAllWindows.checked,
       checkWhenRedirecting: checkWhenRedirecting.checked,
-      checkWhenOpeningNewTab: checkWhenOpeningNewTab.checked,
-      checkWhenOpeningNewWindow: checkWhenOpeningNewWindow.checked,
+      checkWhenOpeningLinkInNewTab: checkWhenOpeningLinkInNewTab.checked,
+      checkWhenOpeningLinkInNewWindow: checkWhenOpeningLinkInNewWindow.checked,
       checkWhenFirstNavigationInFreshTab: checkWhenFirstNavigationInFreshTab.checked,
       removeDeduplicatedTabsFromHistory: removeDeduplicatedTabsFromHistory.checked,
       switchBehavior: switchBehavior.value as SwitchBehavior,
@@ -307,8 +307,8 @@ function setUpBasicSettingsHandlers(): void {
 
   deduplicateInAllWindows.addEventListener('change', handleChange);
   checkWhenRedirecting.addEventListener('change', handleChange);
-  checkWhenOpeningNewTab.addEventListener('change', handleChange);
-  checkWhenOpeningNewWindow.addEventListener('change', handleChange);
+  checkWhenOpeningLinkInNewTab.addEventListener('change', handleChange);
+  checkWhenOpeningLinkInNewWindow.addEventListener('change', handleChange);
   checkWhenFirstNavigationInFreshTab.addEventListener('change', handleChange);
   removeDeduplicatedTabsFromHistory.addEventListener('change', handleChange);
   switchBehavior.addEventListener('change', handleChange);

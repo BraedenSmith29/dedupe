@@ -6,8 +6,8 @@ interface SettingsData {
     pauseTimePresets: [number, number];
     deduplicateInAllWindows: boolean;
     checkWhenRedirecting: boolean;
-    checkWhenOpeningNewTab: boolean;
-    checkWhenOpeningNewWindow: boolean;
+    checkWhenOpeningLinkInNewTab: boolean;
+    checkWhenOpeningLinkInNewWindow: boolean;
     checkWhenFirstNavigationInFreshTab: boolean;
     removeDeduplicatedTabsFromHistory: boolean;
     switchBehavior: SwitchBehavior;
@@ -22,8 +22,8 @@ class Settings extends StorageCache<SettingsData> {
         pauseTimePresets: [1, 5],
         deduplicateInAllWindows: false,
         checkWhenRedirecting: false,
-        checkWhenOpeningNewTab: true,
-        checkWhenOpeningNewWindow: false,
+        checkWhenOpeningLinkInNewTab: true,
+        checkWhenOpeningLinkInNewWindow: false,
         checkWhenFirstNavigationInFreshTab: false,
         removeDeduplicatedTabsFromHistory: true,
         switchBehavior: 'deleteNewAndSwitch',
@@ -50,8 +50,8 @@ class Settings extends StorageCache<SettingsData> {
         if (!pauseTimePresetsValidator(settings.pauseTimePresets)) return false;
         if (!booleanValidator(settings.deduplicateInAllWindows)) return false;
         if (!booleanValidator(settings.checkWhenRedirecting)) return false;
-        if (!booleanValidator(settings.checkWhenOpeningNewTab)) return false;
-        if (!booleanValidator(settings.checkWhenOpeningNewWindow)) return false;
+        if (!booleanValidator(settings.checkWhenOpeningLinkInNewTab)) return false;
+        if (!booleanValidator(settings.checkWhenOpeningLinkInNewWindow)) return false;
         if (!booleanValidator(settings.checkWhenFirstNavigationInFreshTab)) return false;
         if (!booleanValidator(settings.removeDeduplicatedTabsFromHistory)) return false;
         if (!switchBehaviorValidator(settings.switchBehavior)) return false;
@@ -99,14 +99,14 @@ class Settings extends StorageCache<SettingsData> {
         return settings.checkWhenRedirecting;
     }
 
-    getCheckWhenOpeningNewTab(): boolean {
+    getCheckWhenOpeningLinkInNewTab(): boolean {
         const settings = this.getFromCache();
-        return settings.checkWhenOpeningNewTab;
+        return settings.checkWhenOpeningLinkInNewTab;
     }
 
-    getCheckWhenOpeningNewWindow(): boolean {
+    getCheckWhenOpeningLinkInNewWindow(): boolean {
         const settings = this.getFromCache();
-        return settings.checkWhenOpeningNewWindow;
+        return settings.checkWhenOpeningLinkInNewWindow;
     }
 
     getCheckWhenFirstNavigationInFreshTab(): boolean {

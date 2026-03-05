@@ -1,3 +1,4 @@
+import NavigationClassifier from "./NavigationClassifier";
 import Pause from "./Pause";
 import Settings from "./Settings";
 
@@ -5,31 +6,13 @@ async function init() {
 
 const settings = await Settings.create();
 const pause = await Pause.create();
+const navigationClassifier = new NavigationClassifier(settings);
 
 browser.runtime.onStartup.addListener(async () => {
   // TODO: Make sure this works since it's added in an asynchronous context.
   if (pause.getPauseStatus() === 'session') {
     await pause.unpause();
   }
-});
-
-const newTabs = new Set<number>();
-const newWindows = new Set<number>();
-
-browser.tabs.onCreated.addListener((tab) => {
-  if (tab.id) newTabs.add(tab.id);
-});
-
-browser.tabs.onRemoved.addListener((tabId) => {
-  newTabs.delete(tabId);
-});
-
-browser.windows.onCreated.addListener((window) => {
-  if (window.id && window.type === 'normal') newWindows.add(window.id);
-});
-
-browser.windows.onRemoved.addListener((windowId) => {
-  newWindows.delete(windowId);
 });
 
 let currentFocusedWindowId = -1;
@@ -39,30 +22,6 @@ browser.windows.onFocusChanged.addListener((windowId) => {
     currentFocusedWindowId = windowId;
   }
 });
-
-function isReloadingTab(tab: browser.tabs.Tab, newUrl: string) {
-  return tab.url === newUrl;
-}
-
-function isDeliberateDuplicateOrOpenedFromHistory(tab: browser.tabs.Tab) {
-  return tab.url !== 'about:blank' && tab.url !== 'about:newtab' && tab.url !== 'about:home' && tab.id !== undefined && newTabs.has(tab.id);
-}
-
-function isFirstNavigationInFreshTab(tab: browser.tabs.Tab) {
-  return tab.url === 'about:newtab' || tab.url === 'about:home';
-}
-
-function isOpenedInNewWindow(tab: browser.tabs.Tab) {
-  return tab.url === 'about:blank' && tab.windowId !== undefined && newWindows.has(tab.windowId) && !isFirstNavigationInFreshTab(tab);
-}
-
-function isOpenedInNewTabInSameWindow(tab: browser.tabs.Tab) {
-  return tab.url === 'about:blank' && tab.id !== undefined && newTabs.has(tab.id) && !isOpenedInNewWindow(tab) && !isFirstNavigationInFreshTab(tab);
-}
-
-function isRedirect(tab: browser.tabs.Tab) {
-  return tab.url !== 'about:blank' && !isOpenedInNewTabInSameWindow(tab) && !isOpenedInNewWindow(tab) && !isFirstNavigationInFreshTab(tab);
-}
 
 // Helps track if a refocus occurs in the middle of a webRequest
 let refocusTracker = false;
@@ -75,51 +34,33 @@ browser.webRequest.onBeforeRequest.addListener(
     const sourceWindowId = currentFocusedWindowId;
     refocusTracker = false;
 
-    const allowRequest = (tabId: number | null = null, windowId: number | null = null) => {
-      if (tabId !== null) newTabs.delete(tabId);
-      if (windowId !== null) newWindows.delete(windowId);
-      return { cancel: false };
-    }
+    const allowRequest = { cancel: false };
+    const denyRequest = { cancel: true };
 
-    if (requestDetails.tabId === -1) return allowRequest();
+    if (requestDetails.tabId === -1) return allowRequest;
 
     const currentTab = await browser.tabs.get(requestDetails.tabId).catch(() => null) as (browser.tabs.Tab & { id: number } | null);
-    if (!currentTab) return allowRequest(requestDetails.tabId);
+    if (!currentTab) return allowRequest;
     
     if (pause.isPaused()) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
+      return allowRequest;
     }
 
-    if (isReloadingTab(currentTab, requestDetails.url)) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
-    }
-    if (isDeliberateDuplicateOrOpenedFromHistory(currentTab)) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
-    }
-
-    if (isFirstNavigationInFreshTab(currentTab) && !settings.getCheckWhenFirstNavigationInFreshTab()) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
-    }
-    if (isOpenedInNewWindow(currentTab) && !settings.getCheckWhenOpeningNewWindow()) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
-    }
-    if (isOpenedInNewTabInSameWindow(currentTab) && !settings.getCheckWhenOpeningNewTab()) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
-    }
-    if (isRedirect(currentTab) && !settings.getCheckWhenRedirecting()) {
-      return allowRequest(requestDetails.tabId, currentTab.windowId);
+    const navigationType = navigationClassifier.classifyNavigation(currentTab, requestDetails.url);
+    if (!navigationType.shouldDeduplicate) {
+      return allowRequest;
     }
 
     const existingTabs = await findExistingTabs(requestDetails.url, currentTab.id, sourceWindowId);
-    if (existingTabs.length === 0) return allowRequest(requestDetails.tabId, currentTab.windowId);
+    if (existingTabs.length === 0) return allowRequest;
 
     let tabSwitched = false;
     switch (settings.getSwitchBehavior()) {
       case 'deleteOldAndSwitch':
         tabSwitched = await switchToTab(currentTab);
-        if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
+        if (!tabSwitched) return allowRequest;
       case 'deleteOld':
-        if (!tabSwitched && isOpenedInNewWindow(currentTab)) {
+        if (!tabSwitched && navigationType.openedInNewWindow) {
           if (refocusTracker) {
             await browser.windows.update(sourceWindowId, { focused: true });
           } else {
@@ -132,23 +73,23 @@ browser.webRequest.onBeforeRequest.addListener(
             browser.windows.onFocusChanged.addListener(overrideFocusListener);
           }
         }
-        if (!isRedirect(currentTab)) {
+        if (!navigationType.redirect) {
           existingTabs.forEach(async (existingTab) => {
             if (existingTab.id && !existingTab.pinned) {
               await closeTab(existingTab.id, existingTab.url ?? 'about:blank');
             }
           });
         }
-        return allowRequest(requestDetails.tabId, currentTab.windowId);
+        return allowRequest;
       case 'deleteNewAndSwitch':
         tabSwitched = await switchToTab(existingTabs[0]);
-        if (!tabSwitched) return allowRequest(requestDetails.tabId, currentTab.windowId);
+        if (!tabSwitched) return allowRequest;
       case 'deleteNew':
-        if (!isRedirect(currentTab) && !currentTab.pinned) await closeTab(currentTab.id, requestDetails.url);
-        return { cancel: true };
+        if (!navigationType.redirect && !currentTab.pinned) await closeTab(currentTab.id, requestDetails.url);
+        return denyRequest;
       default:
         // Should never reach here since settings are validated, but just in case:
-        return allowRequest(requestDetails.tabId, currentTab.windowId);
+        return allowRequest;
     }
   },
   { urls: ["<all_urls>"], types: ["main_frame"] },
