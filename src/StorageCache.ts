@@ -4,7 +4,7 @@ export default abstract class StorageCache<T> {
 
     private cache: T | null = null;
 
-    private readonly settingsChangeListener = (changes: { [key: string]: browser.storage.StorageChange }, area: string): void => {
+    private readonly storageChangeListener = (changes: { [key: string]: browser.storage.StorageChange }, area: string): void => {
         if (area !== "local") return;
         const changed = changes[this.storageKey];
         if (!changed) return;
@@ -15,11 +15,11 @@ export default abstract class StorageCache<T> {
     protected constructor(storageKey: string, defaultValue: T) {
         this.storageKey = storageKey;
         this.default = defaultValue;
-        browser.storage.onChanged.addListener(this.settingsChangeListener);
+        browser.storage.onChanged.addListener(this.storageChangeListener);
     }
 
     destroy(): void {
-        browser.storage.onChanged.removeListener(this.settingsChangeListener);
+        browser.storage.onChanged.removeListener(this.storageChangeListener);
     }
 
     async load(): Promise<T | null> {
