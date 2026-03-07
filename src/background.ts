@@ -1,12 +1,14 @@
-import NavigationClassifier from "./NavigationClassifier";
 import Pause from "./Pause";
 import Settings from "./Settings";
+import TabTracker from "./TabTracker";
+import WindowTracker from "./WindowTracker";
 
 async function init() {
 
 const settings = await Settings.create();
 const pause = await Pause.create();
-const navigationClassifier = new NavigationClassifier(settings);
+const windowTracker = await WindowTracker.create();
+const tabTracker = await TabTracker.create(settings, windowTracker);
 
 browser.runtime.onStartup.addListener(async () => {
   // TODO: Make sure this works since it's added in an asynchronous context.
@@ -15,86 +17,61 @@ browser.runtime.onStartup.addListener(async () => {
   }
 });
 
-let currentFocusedWindowId = -1;
+tabTracker.setDeduplicationCandidateFoundListener(async (tabData, targetUrl, method) => {
+  if (pause.isPaused()) return;
 
-browser.windows.onFocusChanged.addListener((windowId) => {
-  if (windowId !== -1) {
-    currentFocusedWindowId = windowId;
+  // Check if the deduplication method is disabled in settings
+  if (method.reload || method.deliberateDuplicateOrHistory) return;
+  if (method.firstNavigationInFreshTab && !settings.getCheckWhenFirstNavigationInFreshTab()) return;
+  if (method.openedInNewWindow && !settings.getCheckWhenOpeningLinkInNewWindow()) return;
+  if (method.openedInNewTabInSameWindow && !settings.getCheckWhenOpeningLinkInNewTab()) return;
+  if (method.redirect && !settings.getCheckWhenRedirecting()) return;
+
+  const existingTabs = await findExistingTabs(targetUrl, tabData.tabId, tabData.sourceWindowId);
+  if (existingTabs.length === 0) return;
+
+  let tabSwitched = false;
+  switch (settings.getSwitchBehavior()) {
+    case 'deleteOldAndSwitch':
+      tabSwitched = await switchToTab(tabData.tabId, tabData.targetWindowId);
+      if (!tabSwitched) return;
+    case 'deleteOld':
+      if (!tabSwitched && method.openedInNewWindow) {
+        if (windowTracker.isNewWindowFocused(tabData.targetWindowId)) {
+          await browser.windows.update(tabData.sourceWindowId, { focused: true });
+        } else {
+          const overrideFocusListener = async (windowId: number) => {
+            if (windowId !== -1) {
+              await browser.windows.update(tabData.sourceWindowId, { focused: true });
+              browser.windows.onFocusChanged.removeListener(overrideFocusListener);
+            }
+          };
+          browser.windows.onFocusChanged.addListener(overrideFocusListener);
+        }
+      }
+      if (!method.redirect) {
+        existingTabs.forEach(async (existingTab) => {
+          if (existingTab.id && !existingTab.pinned) {
+            await closeTab(existingTab.id, existingTab.url ?? 'about:blank');
+          }
+        });
+      }
+      return;
+    case 'deleteNewAndSwitch':
+      tabSwitched = await switchToTab(existingTabs[0].id, existingTabs[0].windowId);
+      if (!tabSwitched) return;
+    case 'deleteNew':
+      if (method.redirect) {
+        await browser.tabs.goBack(tabData.tabId);
+      } else {
+        await closeTab(tabData.tabId, targetUrl)
+      }
+      return;
+    default:
+      // Should never reach here since settings are validated, but just in case:
+      return;
   }
 });
-
-// Helps track if a refocus occurs in the middle of a webRequest
-let refocusTracker = false;
-browser.windows.onFocusChanged.addListener(() => {
-  refocusTracker = true;
-});
-
-browser.webRequest.onBeforeRequest.addListener(
-  async (requestDetails) => {
-    const sourceWindowId = currentFocusedWindowId;
-    refocusTracker = false;
-
-    const allowRequest = { cancel: false };
-    const denyRequest = { cancel: true };
-
-    if (requestDetails.tabId === -1) return allowRequest;
-
-    const currentTab = await browser.tabs.get(requestDetails.tabId).catch(() => null) as (browser.tabs.Tab & { id: number } | null);
-    if (!currentTab) return allowRequest;
-    
-    if (pause.isPaused()) {
-      return allowRequest;
-    }
-
-    const navigationType = navigationClassifier.classifyNavigation(currentTab, requestDetails.url);
-    if (!navigationType.shouldDeduplicate) {
-      return allowRequest;
-    }
-
-    const existingTabs = await findExistingTabs(requestDetails.url, currentTab.id, sourceWindowId);
-    if (existingTabs.length === 0) return allowRequest;
-
-    let tabSwitched = false;
-    switch (settings.getSwitchBehavior()) {
-      case 'deleteOldAndSwitch':
-        tabSwitched = await switchToTab(currentTab);
-        if (!tabSwitched) return allowRequest;
-      case 'deleteOld':
-        if (!tabSwitched && navigationType.openedInNewWindow) {
-          if (refocusTracker) {
-            await browser.windows.update(sourceWindowId, { focused: true });
-          } else {
-            const overrideFocusListener = async (windowId: number) => {
-              if (windowId !== -1) {
-                await browser.windows.update(sourceWindowId, { focused: true });
-                browser.windows.onFocusChanged.removeListener(overrideFocusListener);
-              }
-            };
-            browser.windows.onFocusChanged.addListener(overrideFocusListener);
-          }
-        }
-        if (!navigationType.redirect) {
-          existingTabs.forEach(async (existingTab) => {
-            if (existingTab.id && !existingTab.pinned) {
-              await closeTab(existingTab.id, existingTab.url ?? 'about:blank');
-            }
-          });
-        }
-        return allowRequest;
-      case 'deleteNewAndSwitch':
-        tabSwitched = await switchToTab(existingTabs[0]);
-        if (!tabSwitched) return allowRequest;
-      case 'deleteNew':
-        if (!navigationType.redirect && !currentTab.pinned) await closeTab(currentTab.id, requestDetails.url);
-        return denyRequest;
-      default:
-        // Should never reach here since settings are validated, but just in case:
-        return allowRequest;
-    }
-  },
-  { urls: ["<all_urls>"], types: ["main_frame"] },
-  ["blocking"]
-);
 
 function getComparisonUrl(url: string) {
   try {
@@ -144,10 +121,10 @@ async function findExistingTabs(url: string, currentTabId: number | undefined, s
   });
 }
 
-async function switchToTab(tab: browser.tabs.Tab) {
-  if (tab.id && tab.windowId) {
-    await browser.windows.update(tab.windowId, { focused: true });
-    await browser.tabs.update(tab.id, { active: true });
+async function switchToTab(tabId: number | undefined, windowId: number | undefined): Promise<boolean> {
+  if (tabId && windowId) {
+    await browser.windows.update(windowId, { focused: true });
+    await browser.tabs.update(tabId, { active: true });
     return true;
   } else {
     return false;
