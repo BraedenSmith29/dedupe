@@ -61,8 +61,8 @@ export default class WindowTracker {
         return !this.knownWindows.has(windowId);
     }
 
-    public isNewWindowFocused(windowId: number): boolean {
-        return !this.unfocusedNewWindows.has(windowId);
+    public newWindowNotFocusedYet(windowId: number): boolean {
+        return this.unfocusedNewWindows.has(windowId);
     }
 
     public getCurrentlyFocusedWindowId(): number {
