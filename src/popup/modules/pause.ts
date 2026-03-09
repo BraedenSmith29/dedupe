@@ -56,7 +56,7 @@ function getResumingCountdownText(pausedUntil: number): string {
 export function setUpPausing(settings: Settings, pause: Pause): void {
     const buttons = document.querySelectorAll('.apply-pause');
     buttons.forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', async (e): Promise<void> => {
             e.preventDefault();
 
             if (btn.classList.contains('selected')) {
@@ -100,7 +100,7 @@ export function setUpPausing(settings: Settings, pause: Pause): void {
     });
 
     const customButton = document.getElementById('custom');
-    customButton?.addEventListener('click', async () => {
+    customButton?.addEventListener('click', async (): Promise<void> => {
         const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
         if (customButton.classList.contains('selected') || !customPauseDurationContainer.hidden) {
             await pause.unpause();

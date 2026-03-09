@@ -13,7 +13,7 @@ function setUpSettingsToggle(): void {
     const settingsSection = document.getElementById('settings') as HTMLElement;
     const controlsSection = document.getElementById('controls') as HTMLElement;
 
-    settingsToggle.addEventListener('click', () => {
+    settingsToggle.addEventListener('click', (): void => {
         settingsSection.hidden = !settingsSection.hidden;
         controlsSection.hidden = !controlsSection.hidden;
         settingsToggle.classList.toggle('selected');
@@ -45,7 +45,7 @@ function setUpBasicSettingsHandlers(settings: Settings): void {
     ignoreHash.checked = settings.getIgnoreHash();
     darkMode.checked = settings.getDarkMode();
 
-    const handleChange = async () => {
+    const handleChange = async (): Promise<void> => {
         await settings.setSettings({
             deduplicateInAllWindows: deduplicateInAllWindows.checked,
             checkWhenRedirecting: checkWhenRedirecting.checked,
@@ -74,7 +74,7 @@ function setUpBasicSettingsHandlers(settings: Settings): void {
 }
 
 function setUpPauseSettingHandler(settings: Settings): void {
-    const handleChange = async (event: Event) => {
+    const handleChange = async (event: Event): Promise<void> => {
         const target = event.currentTarget as HTMLInputElement;
         const duration = parseInt(target.value, 10);
         const min = parseInt(target.min, 10);
@@ -130,7 +130,7 @@ function setPauseTimePresetButtonLabel(index: number, pauseTimePreset: number): 
 
 function setUpResetSettingsHandler(settings: Settings): void {
     const resetButton = document.getElementById('resetSettings') as HTMLElement;
-    resetButton.addEventListener('click', async () => {
+    resetButton.addEventListener('click', async (): Promise<void> => {
         if (confirm('Are you sure you want to reset all settings to defaults?')) {
             await settings.reset();
             location.reload();

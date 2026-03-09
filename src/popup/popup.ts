@@ -13,6 +13,4 @@ async function init(): Promise<void> {
     setUpSettings(settings);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    init();
-});
+document.addEventListener("DOMContentLoaded", init);

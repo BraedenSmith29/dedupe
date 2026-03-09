@@ -3,26 +3,26 @@ export default class WindowTracker {
     private readonly knownWindows: Set<number> = new Set();
     private currentlyFocusedWindowId: number = -1;
 
-    private onTabCreated = (tab: browser.tabs.Tab) => {
+    private onTabCreated = (tab: browser.tabs.Tab): void => {
         if (tab.windowId !== undefined && !this.knownWindows.has(tab.windowId)) {
             this.unfocusedNewWindows.add(tab.windowId);
         }
     }
 
-    private onWindowCreated = (window: browser.windows.Window) => {
+    private onWindowCreated = (window: browser.windows.Window): void => {
         if (window.id !== undefined && window.type === 'normal') {
             this.knownWindows.add(window.id);
         }
     }
 
-    private onWindowFocusChanged = (windowId: number) => {
+    private onWindowFocusChanged = (windowId: number): void => {
         if (windowId !== -1) {
             this.currentlyFocusedWindowId = windowId;
             this.unfocusedNewWindows.delete(windowId);
         }
     }
 
-    private onWindowRemoved = (windowId: number) => {
+    private onWindowRemoved = (windowId: number): void => {
         this.knownWindows.delete(windowId);
         this.unfocusedNewWindows.delete(windowId);
     }

@@ -71,19 +71,28 @@ async function renderDuplicateTabs(): Promise<void> {
             title.setAttribute('aria-label', `Go to tab: ${item.title}`);
             deleteButton.setAttribute('aria-label', `Delete tab: ${item.title}`);
 
-            title.addEventListener('click', () => {
-                browser.tabs.update(item.tabId, { active: true });
-                browser.windows.update(item.windowId, { focused: true });
+            title.addEventListener('click', async (): Promise<void> => {
+                await browser.windows.update(item.windowId, { focused: true })
+                    .catch(error => {
+                        console.error(`Failed to focus window ${item.windowId}:`, error);
+                    });
+                await browser.tabs.update(item.tabId, { active: true })
+                    .catch(error => {
+                        console.error(`Failed to activate tab ${item.tabId}:`, error);
+                    });
             });
 
-            deleteButton.addEventListener('click', () => {
+            deleteButton.addEventListener('click', async (): Promise<void> => {
                 if (group.length === 2) {
                     currentGroupItems.forEach(i => i.remove());
                 } else {
                     row.remove();
                 }
                 updateDuplicateTabsListState();
-                browser.tabs.remove(item.tabId);
+                await browser.tabs.remove(item.tabId)
+                    .catch(error => {
+                        console.error(`Failed to remove tab ${item.tabId}:`, error);
+                    });
             });
 
             currentGroupItems.push(row);
@@ -95,23 +104,26 @@ async function renderDuplicateTabs(): Promise<void> {
     updateDuplicateTabsListState();
 }
 
-export function setUpTabDeduplication() {
+export function setUpTabDeduplication(): void {
     const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
     if (!deduplicateAllButton) return;
 
-    deduplicateAllButton.addEventListener('click', async () => {
+    deduplicateAllButton.addEventListener('click', async (): Promise<void> => {
         const duplicateTabs = await getDuplicateTabs();
-        for (const group of duplicateTabs) {
-            // Remove all but the first tab in each group
-            group.slice(1).forEach(tab => {
-                browser.tabs.remove(tab.tabId);
-            });
-        }
+        
+        await Promise.all(
+            duplicateTabs.flatMap(group => 
+                group
+                .slice(1)
+                .map(tab => browser.tabs.remove(tab.tabId))
+            )
+        );
+
         document.getElementById('duplicateTabsList')?.replaceChildren();
         updateDuplicateTabsListState();
     });
 
-    renderDuplicateTabs();
+    void renderDuplicateTabs();
     browser.tabs.onCreated.addListener(renderDuplicateTabs);
     browser.tabs.onRemoved.addListener(renderDuplicateTabs);
     browser.tabs.onUpdated.addListener(renderDuplicateTabs);

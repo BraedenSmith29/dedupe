@@ -17,7 +17,7 @@ export default class TabTracker {
     private readonly allTabs: Map<number, TabData> = new Map();
     private readonly navigatingTabs: Map<number, NavigationData> = new Map();
 
-    private onTabCreated = (tab: browser.tabs.Tab) => {
+    private onTabCreated = (tab: browser.tabs.Tab): void => {
         if (tab.id === undefined || tab.windowId === undefined) return;
 
         if (tab.url !== 'about:newtab' && tab.url !== 'about:home') {
@@ -33,12 +33,12 @@ export default class TabTracker {
         this.updateTabData(tab);
     }
 
-    private onTabRemoved = (tabId: number) => {
+    private onTabRemoved = (tabId: number): void => {
         this.allTabs.delete(tabId);
         this.navigatingTabs.delete(tabId);
     }
 
-    private onTabUpdated = (tabId: number, changeInfo: browser.tabs._OnUpdatedChangeInfo, tab: browser.tabs.Tab) => {
+    private onTabUpdated = (tabId: number, changeInfo: browser.tabs._OnUpdatedChangeInfo, tab: browser.tabs.Tab): void => {
         if (tab.id === undefined || tab.windowId === undefined) return;
         if (changeInfo.url === undefined && changeInfo.status === undefined) return;
         const newUrl = changeInfo.url;
@@ -65,7 +65,7 @@ export default class TabTracker {
         if (newUrl) {
             const navigationMethod = this.classifyNavigation(navigationData, previousTabInfo.url, newUrl);
             if (navigationMethod) {
-                this.deduplicator.deduplicate(navigationData, newUrl, navigationMethod);
+                void this.deduplicator.deduplicate(navigationData, newUrl, navigationMethod);
             }
         }
 

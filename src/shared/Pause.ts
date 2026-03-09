@@ -53,7 +53,7 @@ class Pause extends StorageCache<PauseData> {
         }
 
         if (pause.pausedUntil === null || Date.now() >= pause.pausedUntil) {
-            this.unpause();
+            void this.unpause();
             return Pause.UNPAUSED;
         }
 
