@@ -5,7 +5,7 @@
   "description": "Switch to existing tab instead of opening duplicate",
   "permissions": ["storage", "tabs", "<all_urls>"],
   "browser_action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup/popup.html"
   },
   "background": {
     "scripts": ["background.js"]
