@@ -3,7 +3,7 @@
   "name": "Dedupe: Tab Deduplicator",
   "version": "1.0",
   "description": "Switch to existing tab instead of opening duplicate",
-  "permissions": ["storage", "tabs", "<all_urls>"],
+  "permissions": ["storage", "tabs"],
   "browser_action": {
     "default_popup": "popup/popup.html"
   },
@@ -12,10 +12,10 @@
   },
   "browser_specific_settings": {
     "gecko": {
-        "id": "@dedupe-tab-deduplicator",
-        "data_collection_permissions": {
-          "required": ["none"]
-         }
+      "id": "@dedupe-tab-deduplicator",
+      "data_collection_permissions": {
+        "required": ["none"]
       }
+    }
   }
 }
