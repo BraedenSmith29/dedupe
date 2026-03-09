@@ -1,5 +1,5 @@
-import Pause from "./shared/Pause";
-import Settings from "./shared/Settings";
+import Pause from "../shared/Pause";
+import Settings from "../shared/Settings";
 import { NavigationData, NavigationMethod } from "./navigation";
 import WindowTracker from "./WindowTracker";
 

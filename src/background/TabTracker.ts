@@ -1,7 +1,7 @@
 import Deduplicator from "./Deduplicator";
 import { NavigationData, NavigationMethod } from "./navigation";
-import Pause from "./shared/Pause";
-import Settings from "./shared/Settings";
+import Pause from "../shared/Pause";
+import Settings from "../shared/Settings";
 import WindowTracker from "./WindowTracker";
 
 interface TabData {
