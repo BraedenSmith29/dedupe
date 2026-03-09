@@ -1,5 +1,5 @@
-import Pause from "./Pause";
-import Settings from "./Settings";
+import Pause from "./shared/Pause";
+import Settings from "./shared/Settings";
 import TabTracker from "./TabTracker";
 
 async function init() {

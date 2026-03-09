@@ -1,4 +1,4 @@
-import Settings, { SwitchBehavior } from "../../Settings";
+import Settings, { SwitchBehavior } from "../../shared/Settings";
 
 function applyDarkMode(settings: Settings): void {
     if (settings.getDarkMode()) {

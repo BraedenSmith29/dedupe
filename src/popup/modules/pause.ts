@@ -1,5 +1,5 @@
-import Pause, { PausedStatus } from "../../Pause";
-import Settings from "../../Settings";
+import Pause, { PausedStatus } from "../../shared/Pause";
+import Settings from "../../shared/Settings";
 
 function updatePauseStatus(pause: Pause): void {
     const statusBadge = document.getElementById('statusBadge') as HTMLElement;

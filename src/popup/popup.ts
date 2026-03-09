@@ -1,5 +1,5 @@
-import Pause from "../Pause.js";
-import Settings from "../Settings.js";
+import Pause from "../shared/Pause.js";
+import Settings from "../shared/Settings.js";
 import { setUpTabDeduplication } from "./modules/duplicates.js";
 import { setUpPausing } from "./modules/pause.js";
 import { setUpSettings } from "./modules/settings.js";
