@@ -20,19 +20,24 @@ export default class Deduplicator {
         const oldTabs = await this.findExistingTabs(newUrl, navigationData.tabId, navigationData.sourceWindowId);
         if (oldTabs.length === 0) return;
 
-        switch (this.settings.getSwitchBehavior()) {
-            case 'deleteOldAndSwitch':
-                await this.deleteOldAndSwitch(navigationData, method, oldTabs);
-                break;
-            case 'deleteOld':
-                await this.deleteOld(navigationData, method, oldTabs, false);
-                break;
-            case 'deleteNewAndSwitch':
-                await this.deleteNewAndSwitch(navigationData, method, oldTabs, newUrl);
-                break;
-            case 'deleteNew':
-                await this.deleteNew(navigationData, method, newUrl);
-                break;
+        if (method === 'redirect') {
+            // Special behavior for redirects
+            await this.goBackAndSwitch(navigationData, oldTabs);
+        } else {
+            switch (this.settings.getSwitchBehavior()) {
+                case 'deleteOldAndSwitch':
+                    await this.deleteOldAndSwitch(navigationData, method, oldTabs);
+                    break;
+                case 'deleteOld':
+                    await this.deleteOld(navigationData, method, oldTabs, false);
+                    break;
+                case 'deleteNewAndSwitch':
+                    await this.deleteNewAndSwitch(navigationData, method, oldTabs, newUrl);
+                    break;
+                case 'deleteNew':
+                    await this.deleteNew(navigationData, method, newUrl);
+                    break;
+            }
         }
     }
 
@@ -99,6 +104,15 @@ export default class Deduplicator {
             return url;
         }
     }
+    
+    private async goBackAndSwitch(navigationData: NavigationData, oldTabs: browser.tabs.Tab[]): Promise<void> {
+        const tabSwitched = await this.switchToTab(oldTabs[0].id, oldTabs[0].windowId);
+        if (!tabSwitched) return;
+        await browser.tabs.goBack(navigationData.tabId)
+            .catch(error => {
+                console.error(`Failed to go back in tab ${navigationData.tabId}:`, error);
+            });
+    }
 
     private async deleteOldAndSwitch(navigationData: NavigationData, method: NavigationMethod, oldTabs: browser.tabs.Tab[]): Promise<void> {
         const tabSwitched = await this.switchToTab(navigationData.tabId, navigationData.targetWindowId);
@@ -107,15 +121,8 @@ export default class Deduplicator {
     }
     
     private async deleteOld(navigationData: NavigationData, method: NavigationMethod, oldTabs: browser.tabs.Tab[], tabSwitched: boolean): Promise<void> {
-        if (!tabSwitched && method === 'openedInNewWindow') {
-            if (this.windowTracker.newWindowNotFocusedYet(navigationData.targetWindowId)) {
-                this.overrideNextFocus(navigationData.sourceWindowId);
-            } else {
-                await browser.windows.update(navigationData.sourceWindowId, { focused: true })
-                    .catch(error => {
-                        console.error(`Failed to focus source window ${navigationData.sourceWindowId}:`, error);
-                    });
-            }
+        if (!tabSwitched) {
+            await this.stayOnSourceTab(navigationData, method)
         }
         if (method !== 'redirect') {
             await Promise.all(
@@ -143,6 +150,24 @@ export default class Deduplicator {
         }
     }
 
+    private async stayOnSourceTab(navigationData: NavigationData, method: NavigationMethod): Promise<void> {
+        if (method === 'openedInNewWindow') {
+            if (this.windowTracker.newWindowNotFocusedYet(navigationData.targetWindowId)) {
+                this.overrideNextFocus(navigationData.sourceWindowId);
+            } else {
+                await browser.windows.update(navigationData.sourceWindowId, { focused: true })
+                    .catch(error => {
+                        console.error(`Failed to focus source window ${navigationData.sourceWindowId}:`, error);
+                    });
+            }
+        } else if (method === 'openedInNewTabInSameWindow') {
+            await browser.tabs.update(navigationData.sourceTabId, { active: true })
+                .catch(error => {
+                    console.error(`Failed to focus source tab ${navigationData.sourceTabId}:`, error);
+                });
+        }
+    }
+
     private overrideNextFocus(windowId: number): void {
         const overrideFocusListener = async (focusedWindowId: number): Promise<void> => {
             if (focusedWindowId !== -1) {
@@ -158,15 +183,14 @@ export default class Deduplicator {
 
     private async switchToTab(tabId: number | undefined, windowId: number | undefined): Promise<boolean> {
         if (tabId !== undefined && windowId !== undefined) {
-            await browser.windows.update(windowId, { focused: true })
-                .catch(error => {
-                    console.error(`Failed to focus window ${windowId}:`, error);
-                });
-            await browser.tabs.update(tabId, { active: true })
-                .catch(error => {
-                    console.error(`Failed to activate tab ${tabId}:`, error);
-                });
-            return true;
+            try {
+                await browser.windows.update(windowId, { focused: true });
+                await browser.tabs.update(tabId, { active: true });
+                return true;
+            } catch (error) {
+                console.error(`Failed to switch to tab ${tabId} in window ${windowId}:`, error);
+                return false;
+            }
         } else {
             return false;
         }

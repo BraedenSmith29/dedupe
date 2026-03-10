@@ -11,5 +11,6 @@ export interface NavigationData {
     newTab: boolean;
     newWindow: boolean;
     sourceWindowId: number;
+    sourceTabId: number;
     targetWindowId: number;
 }

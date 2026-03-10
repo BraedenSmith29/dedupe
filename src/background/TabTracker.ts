@@ -20,12 +20,14 @@ export default class TabTracker {
     private onTabCreated = (tab: browser.tabs.Tab): void => {
         if (tab.id === undefined || tab.windowId === undefined) return;
 
+        const sourceWindowId = this.windowTracker.getCurrentlyFocusedWindowId();
         if (tab.url !== 'about:newtab' && tab.url !== 'about:home') {
             this.navigatingTabs.set(tab.id, {
                 tabId: tab.id,
                 newTab: true,
                 newWindow: this.windowTracker.isNewWindow(tab.windowId),
-                sourceWindowId: this.windowTracker.getCurrentlyFocusedWindowId(),
+                sourceWindowId: sourceWindowId,
+                sourceTabId: this.windowTracker.getCurrentlyFocusedTabId(sourceWindowId),
                 targetWindowId: tab.windowId,
             });
         }
@@ -54,6 +56,7 @@ export default class TabTracker {
                 newTab: false,
                 newWindow: false,
                 sourceWindowId: tab.windowId,
+                sourceTabId: tabId,
                 targetWindowId: tab.windowId,
             });
         }
