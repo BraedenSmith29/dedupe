@@ -1,17 +1,24 @@
 import Pause from "../shared/Pause";
 import Settings from "../shared/Settings";
 import { NavigationData, NavigationMethod } from "./navigation";
+import TabForgettor from "./TabForgettor";
 import WindowTracker from "./WindowTracker";
 
 export default class Deduplicator {
     private readonly settings: Settings;
     private readonly pause: Pause;
     private readonly windowTracker: WindowTracker;
+    private readonly tabForgettor: TabForgettor;
 
     constructor(settings: Settings, pause: Pause, windowTracker: WindowTracker) {
         this.settings = settings;
         this.pause = pause;
         this.windowTracker = windowTracker;
+        this.tabForgettor = new TabForgettor();
+    }
+
+    public destroy(): void {
+        this.tabForgettor.destroy();
     }
 
     public async deduplicate(navigationData: NavigationData, newUrl: string, method: NavigationMethod): Promise<void> {
@@ -128,7 +135,7 @@ export default class Deduplicator {
             await Promise.all(
                 oldTabs
                     .filter((existingTab) => existingTab.id !== undefined && !existingTab.pinned)
-                    .map((existingTab) => this.closeTab(existingTab.id!, existingTab.url ?? 'about:blank'))
+                    .map((existingTab) => this.closeTab(existingTab.id!, existingTab.url ?? 'about:blank', existingTab.windowId))
             );
         }
     }
@@ -146,7 +153,7 @@ export default class Deduplicator {
                     console.error(`Failed to go back in tab ${navigationData.tabId}:`, error);
                 });
         } else {
-            await this.closeTab(navigationData.tabId, newUrl);
+            await this.closeTab(navigationData.tabId, newUrl, navigationData.targetWindowId);
         }
     }
 
@@ -196,17 +203,13 @@ export default class Deduplicator {
         }
     }
 
-    private async closeTab(tabId: number, targetUrl: string): Promise<void> {
-        if (!this.settings.getRemoveDeduplicatedTabsFromHistory()) {
-            await browser.tabs.update(tabId, { url: targetUrl })
-                .catch(error => {
-                    console.error(`Failed to update tab ${tabId} URL to ${targetUrl}:`, error);
-                });
+    private async closeTab(tabId: number, targetUrl: string, windowId: number | undefined): Promise<void> {
+        if (this.settings.getRemoveDeduplicatedTabsFromHistory() && windowId !== undefined) {
+            this.tabForgettor.addTabToForgetQueue(targetUrl, windowId);
         }
         await browser.tabs.remove(tabId)
             .catch(error => {
                 console.error(`Failed to remove tab ${tabId}:`, error);
             });
     }
-
 }
