@@ -26,6 +26,12 @@ class Pause extends StorageCache<PauseData> {
 
     async unpause(): Promise<void> {
         await this.reset();
+        await browser.browserAction.setIcon({
+            path: {
+                32: '../icons/enabled/icon32.png',
+                64: '../icons/enabled/icon64.png',
+            }
+        });
     }
 
     private static validatePause(setting: PauseData): boolean {
@@ -43,6 +49,21 @@ class Pause extends StorageCache<PauseData> {
             throw new Error('Invalid pause data');
         }
         await this.save(updatedPause);
+        if (updatedPause.pauseStatus === null) {
+            await browser.browserAction.setIcon({
+                path: {
+                    32: '../icons/enabled/icon32.png',
+                    64: '../icons/enabled/icon64.png',
+                }
+            });
+        } else {
+            await browser.browserAction.setIcon({
+                path: {
+                    32: '../icons/paused/icon32.png',
+                    64: '../icons/paused/icon64.png',
+                }
+            });
+        }
     }
 
     private getCurrentPauseData(): PauseData {

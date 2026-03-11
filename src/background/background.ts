@@ -7,6 +7,25 @@ browser.runtime.onStartup.addListener(async (): Promise<void> => {
     const pause = await Pause.create();
     if (pause.getPauseStatus() === 'session') {
         await pause.unpause();
+    } else if (pause.isPaused()) {
+        await browser.browserAction.setIcon({
+            path: {
+                32: '../icons/paused/icon32.png',
+                64: '../icons/paused/icon64.png',
+            }
+        });
+    }
+});
+
+browser.runtime.onInstalled.addListener(async (details): Promise<void> => {
+    const pause = await Pause.create();
+    if (pause.isPaused()) {
+        await browser.browserAction.setIcon({
+            path: {
+                32: '../icons/paused/icon32.png',
+                64: '../icons/paused/icon64.png',
+            }
+        });
     }
 });
 
