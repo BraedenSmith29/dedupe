@@ -1,4 +1,4 @@
-import Settings, { SwitchBehavior } from "../../shared/Settings";
+import Settings, { PauseKeybindBehavior, SwitchBehavior } from "../../shared/Settings";
 
 function applyDarkMode(settings: Settings): void {
     if (settings.getDarkMode()) {
@@ -33,6 +33,7 @@ function setUpBasicSettingsHandlers(settings: Settings): void {
     const ignoreQueryParams = document.getElementById('ignoreQueryParams') as HTMLInputElement;
     const ignoreHash = document.getElementById('ignoreHash') as HTMLInputElement;
     const darkMode = document.getElementById('darkMode') as HTMLInputElement;
+    const pauseKeybindBehavior = document.getElementById('pauseKeybindBehavior') as HTMLSelectElement;
 
     deduplicateInAllWindows.checked = settings.getDeduplicateInAllWindows();
     checkWhenRedirecting.checked = settings.getCheckWhenRedirecting();
@@ -44,6 +45,7 @@ function setUpBasicSettingsHandlers(settings: Settings): void {
     ignoreQueryParams.checked = settings.getIgnoreQuery();
     ignoreHash.checked = settings.getIgnoreHash();
     darkMode.checked = settings.getDarkMode();
+    pauseKeybindBehavior.value = settings.getPauseKeybindBehavior();
 
     const handleChange = async (): Promise<void> => {
         await settings.setSettings({
@@ -57,6 +59,7 @@ function setUpBasicSettingsHandlers(settings: Settings): void {
             ignoreQuery: ignoreQueryParams.checked,
             ignoreHash: ignoreHash.checked,
             darkMode: darkMode.checked,
+            pauseKeybindBehavior: pauseKeybindBehavior.value as PauseKeybindBehavior,
         });
         applyDarkMode(settings);
     };
@@ -71,6 +74,7 @@ function setUpBasicSettingsHandlers(settings: Settings): void {
     ignoreQueryParams.addEventListener('change', handleChange);
     ignoreHash.addEventListener('change', handleChange);
     darkMode.addEventListener('change', handleChange);
+    pauseKeybindBehavior.addEventListener('change', handleChange);
 }
 
 function setUpPauseSettingHandler(settings: Settings): void {

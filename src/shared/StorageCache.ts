@@ -3,6 +3,7 @@ export default abstract class StorageCache<T> {
     private readonly default: T;
 
     private cache: T | null = null;
+    private readonly onStorageChange: ((changes: T | null) => void)[] = [];
 
     private readonly storageChangeListener = (changes: { [key: string]: browser.storage.StorageChange }, area: string): void => {
         if (area !== "local") return;
@@ -10,6 +11,7 @@ export default abstract class StorageCache<T> {
         if (!changed) return;
 
         this.cache = changed.newValue ?? this.default;
+        this.onChange(this.cache);
     };
 
     protected constructor(storageKey: string, defaultValue: T) {
@@ -34,6 +36,7 @@ export default abstract class StorageCache<T> {
     
     async save(value: T): Promise<void> {
         this.cache = value;
+        this.onChange(this.cache);
         await browser.storage.local.set({ [this.storageKey]: value });
     }
 
@@ -41,14 +44,29 @@ export default abstract class StorageCache<T> {
         await this.save(this.default);
     }
 
-    clear(): void {
+    public clear(): void {
         this.cache = null;
     }
 
-    getFromCache(): T {
+    public getFromCache(): T {
         if (!this.cache) {
             throw new Error('Cache not loaded');
         }
         return this.cache;
+    }
+
+    public addOnChangeListener(callback: (changes: T | null) => void): void {
+        this.onStorageChange.push(callback);
+    }
+
+    public removeOnChangeListener(callback: (changes: T | null) => void): void {
+        const index = this.onStorageChange.indexOf(callback);
+        if (index !== -1) {
+            this.onStorageChange.splice(index, 1);
+        }
+    }
+
+    private onChange(changes: T | null): void {
+        this.onStorageChange.forEach(callback => callback(changes));
     }
 }

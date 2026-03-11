@@ -290,6 +290,13 @@ body {
   color: var(--color-error);
 }
 
+.setting-item p {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text);
+  opacity: 0.72;
+}
+
 .inline-setting-item {
   display: flex;
   flex-direction: row;
@@ -337,6 +344,7 @@ input {
   padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
+  box-sizing: border-box;
   font-size: 13px;
   background: var(--color-input-bg);
   color: var(--color-text);

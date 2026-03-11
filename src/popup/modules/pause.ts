@@ -61,7 +61,6 @@ export function setUpPausing(settings: Settings, pause: Pause): void {
 
             if (btn.classList.contains('selected')) {
                 await pause.unpause();
-                updatePauseStatus(pause);
                 return;
             }
 
@@ -95,7 +94,6 @@ export function setUpPausing(settings: Settings, pause: Pause): void {
                 pauseStatus: duration as PausedStatus,
                 pausedUntil: pauseMinutes ? Date.now() + pauseMinutes * 60000 : null,
             });
-            updatePauseStatus(pause);
         });
     });
 
@@ -104,7 +102,6 @@ export function setUpPausing(settings: Settings, pause: Pause): void {
         const customPauseDurationContainer = document.getElementById('customPauseDurationContainer') as HTMLElement;
         if (customButton.classList.contains('selected') || !customPauseDurationContainer.hidden) {
             await pause.unpause();
-            updatePauseStatus(pause);
             customPauseDurationContainer.hidden = true;
         } else {
             customPauseDurationContainer.hidden = false;
@@ -113,4 +110,5 @@ export function setUpPausing(settings: Settings, pause: Pause): void {
 
     updatePauseStatus(pause);
     setInterval(() => updatePauseStatus(pause), 1000);
+    pause.addOnChangeListener(() => updatePauseStatus(pause));
 }

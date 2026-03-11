@@ -10,6 +10,20 @@
   "background": {
     "scripts": ["background/background.js"]
   },
+  "commands": {
+    "toggle-pause": {
+      "suggested_key": {
+        "default": "Shift+Alt+X"
+      },
+      "description": "Pause/unpause the deduplication feature"
+    },
+    "detach-tabs": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Space"
+      },
+      "description": "Detach selected tabs from their window and open them in a new window"
+    }
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "@dedupe-tab-deduplicator",

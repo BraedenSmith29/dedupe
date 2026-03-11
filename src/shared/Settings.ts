@@ -1,6 +1,7 @@
 import StorageCache from './StorageCache';
 
 export type SwitchBehavior = 'deleteNew' | 'deleteNewAndSwitch' | 'deleteOld' | 'deleteOldAndSwitch';
+export type PauseKeybindBehavior = 'showMenu' | 'preset0' | 'preset1' | 'session' | 'permanently';
 
 interface SettingsData {
     pauseTimePresets: [number, number];
@@ -14,6 +15,7 @@ interface SettingsData {
     ignoreQuery: boolean;
     ignoreHash: boolean;
     darkMode: boolean;
+    pauseKeybindBehavior: PauseKeybindBehavior;
 }
 
 class Settings extends StorageCache<SettingsData> {
@@ -30,6 +32,7 @@ class Settings extends StorageCache<SettingsData> {
         ignoreQuery: false,
         ignoreHash: false,
         darkMode: false,
+        pauseKeybindBehavior: 'permanently',
     };
 
     private constructor() {
@@ -46,6 +49,7 @@ class Settings extends StorageCache<SettingsData> {
         const pauseTimePresetsValidator = (v: unknown) => Array.isArray(v) && v.length === 2 && v.every(n => typeof n === 'number');
         const booleanValidator = (v: unknown) => typeof v === 'boolean';
         const switchBehaviorValidator = (v: unknown) => ['deleteNew', 'deleteNewAndSwitch', 'deleteOld', 'deleteOldAndSwitch'].includes(v as string);
+        const pauseKeybindBehaviorValidator = (v: unknown) => ['showMenu', 'preset0', 'preset1', 'session', 'permanently'].includes(v as string);
 
         if (!pauseTimePresetsValidator(settings.pauseTimePresets)) return false;
         if (!booleanValidator(settings.deduplicateInAllWindows)) return false;
@@ -58,7 +62,7 @@ class Settings extends StorageCache<SettingsData> {
         if (!booleanValidator(settings.ignoreQuery)) return false;
         if (!booleanValidator(settings.ignoreHash)) return false;
         if (!booleanValidator(settings.darkMode)) return false;
-
+        if (!pauseKeybindBehaviorValidator(settings.pauseKeybindBehavior)) return false;
         return true;
     }
 
@@ -137,6 +141,11 @@ class Settings extends StorageCache<SettingsData> {
     getDarkMode(): boolean {
         const settings = this.getFromCache();
         return settings.darkMode;
+    }
+
+    getPauseKeybindBehavior(): PauseKeybindBehavior {
+        const settings = this.getFromCache();
+        return settings.pauseKeybindBehavior;
     }
 }
 
