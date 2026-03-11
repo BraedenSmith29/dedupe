@@ -9,7 +9,7 @@ async function init(): Promise<void> {
     const pause = await Pause.create();
 
     setUpPausing(settings, pause);
-    setUpTabDeduplication();
+    setUpTabDeduplication(settings);
     setUpSettings(settings);
 }
 

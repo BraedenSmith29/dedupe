@@ -1,4 +1,5 @@
 import Settings, { PauseKeybindBehavior, SwitchBehavior } from "../../shared/Settings";
+import { setUpDomainList } from "./domainList";
 
 function applyDarkMode(settings: Settings): void {
     if (settings.getDarkMode()) {
@@ -148,4 +149,6 @@ export function setUpSettings(settings: Settings): void {
     setUpBasicSettingsHandlers(settings);
     setUpPauseSettingHandler(settings);
     setUpResetSettingsHandler(settings);
+
+    setUpDomainList(settings);
 }

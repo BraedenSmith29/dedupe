@@ -22,7 +22,7 @@ export default class Deduplicator {
     }
 
     public async deduplicate(navigationData: NavigationData, newUrl: string, method: NavigationMethod): Promise<void> {
-        if (this.pause.isPaused() || !this.shouldDeduplicate(method)) return;
+        if (this.pause.isPaused() || !this.shouldDeduplicate(method) || this.disabledByDomainList(newUrl)) return;
 
         const oldTabs = await this.findExistingTabs(newUrl, navigationData.tabId, navigationData.sourceWindowId);
         if (oldTabs.length === 0) return;
@@ -61,6 +61,19 @@ export default class Deduplicator {
                 return this.settings.getCheckWhenOpeningLinkInNewTab();
             case 'redirect':
                 return this.settings.getCheckWhenRedirecting();
+        }
+    }
+
+    private disabledByDomainList(url: string): boolean {
+        try {
+            const host = new URL(url).hostname.toLowerCase().replace(/\.+$/, '');
+
+            const inDomainList = this.settings.getDomainList().some((domain) => host === domain || host.endsWith(`.${domain}`));
+            const mode = this.settings.getDomainListMode();
+
+            return mode === 'blacklist' ? inDomainList : !inDomainList;
+        } catch {
+            return false;
         }
     }
 

@@ -52,7 +52,7 @@ export default class CommandHandler {
     private async detachTabs(): Promise<void> {
         const highlightedTabs = await browser.tabs.query({
             highlighted: true,
-            windowId: browser.windows.WINDOW_ID_CURRENT
+            currentWindow: true,
         }).then(tabs => tabs.map(tab => tab.id).filter(tabId => tabId !== undefined));
         
         if (highlightedTabs.length === 0) return;

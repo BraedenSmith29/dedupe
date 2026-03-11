@@ -1,3 +1,5 @@
+import Settings from "../../shared/Settings";
+
 type DuplicateTabItem = {
     tabId: number;
     windowId: number;
@@ -6,7 +8,7 @@ type DuplicateTabItem = {
     url: string;
 };
 
-async function getDuplicateTabs(): Promise<DuplicateTabItem[][]> {
+async function getDuplicateTabs(settings: Settings): Promise<DuplicateTabItem[][]> {
     const currentWindowId = await browser.windows.getCurrent().then(w => w.id);
 
     const tabs = await browser.tabs.query({});
@@ -14,6 +16,7 @@ async function getDuplicateTabs(): Promise<DuplicateTabItem[][]> {
 
     for (const tab of tabs) {
         if (!tab.id || !tab.windowId || !tab.url) continue;
+        if (disabledByDomainList(settings, tab.url)) continue;
 
         const otherUrls = sortedTabs.get(tab.url) ?? [];
         otherUrls.push({
@@ -37,6 +40,19 @@ async function getDuplicateTabs(): Promise<DuplicateTabItem[][]> {
     return [...sortedTabs.values()].filter(group => group.length > 1);
 }
 
+function disabledByDomainList(settings: Settings, url: string): boolean {
+    try {
+        const host = new URL(url).hostname.toLowerCase().replace(/\.+$/, '');
+
+        const inDomainList = settings.getDomainList().some((domain) => host === domain || host.endsWith(`.${domain}`));
+        const mode = settings.getDomainListMode();
+
+        return mode === 'blacklist' ? inDomainList : !inDomainList;
+    } catch {
+        return false;
+    }
+}
+
 function updateDuplicateTabsListState(): void {
     const list = document.getElementById('duplicateTabsList') as HTMLUListElement | null;
     const emptyState = document.getElementById('duplicateTabsEmptyState') as HTMLElement | null;
@@ -47,14 +63,14 @@ function updateDuplicateTabsListState(): void {
     deduplicateAllButton.disabled = list.childNodes.length === 0;
 }
 
-async function renderDuplicateTabs(): Promise<void> {
+async function renderDuplicateTabs(settings: Settings): Promise<void> {
     const list = document.getElementById('duplicateTabsList') as HTMLUListElement | null;
     const template = document.getElementById('duplicateTabItemTemplate') as HTMLTemplateElement | null;
     const emptyState = document.getElementById('duplicateTabsEmptyState') as HTMLElement | null;
     const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
     if (!list || !template || !emptyState || !deduplicateAllButton) return;
 
-    const duplicateGroups = await getDuplicateTabs();
+    const duplicateGroups = await getDuplicateTabs(settings);
     const listItems: HTMLElement[] = [];
     for (const group of duplicateGroups) {
         const currentGroupItems: HTMLElement[] = [];
@@ -104,12 +120,12 @@ async function renderDuplicateTabs(): Promise<void> {
     updateDuplicateTabsListState();
 }
 
-export function setUpTabDeduplication(): void {
+export function setUpTabDeduplication(settings: Settings): void {
     const deduplicateAllButton = document.getElementById('deduplicateAll') as HTMLButtonElement | null;
     if (!deduplicateAllButton) return;
 
     deduplicateAllButton.addEventListener('click', async (): Promise<void> => {
-        const duplicateTabs = await getDuplicateTabs();
+        const duplicateTabs = await getDuplicateTabs(settings);
         
         await Promise.all(
             duplicateTabs.flatMap(group => 
@@ -123,8 +139,9 @@ export function setUpTabDeduplication(): void {
         updateDuplicateTabsListState();
     });
 
-    void renderDuplicateTabs();
-    browser.tabs.onCreated.addListener(renderDuplicateTabs);
-    browser.tabs.onRemoved.addListener(renderDuplicateTabs);
-    browser.tabs.onUpdated.addListener(renderDuplicateTabs);
+    void renderDuplicateTabs(settings);
+    browser.tabs.onCreated.addListener(() => void renderDuplicateTabs(settings));
+    browser.tabs.onRemoved.addListener(() => void renderDuplicateTabs(settings));
+    browser.tabs.onUpdated.addListener(() => void renderDuplicateTabs(settings));
+    settings.addOnChangeListener(() => void renderDuplicateTabs(settings));
 }

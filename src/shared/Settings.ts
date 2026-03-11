@@ -2,6 +2,7 @@ import StorageCache from './StorageCache';
 
 export type SwitchBehavior = 'deleteNew' | 'deleteNewAndSwitch' | 'deleteOld' | 'deleteOldAndSwitch';
 export type PauseKeybindBehavior = 'showMenu' | 'preset0' | 'preset1' | 'session' | 'permanently';
+export type DomainListMode = 'whitelist' | 'blacklist';
 
 interface SettingsData {
     pauseTimePresets: [number, number];
@@ -16,6 +17,8 @@ interface SettingsData {
     ignoreHash: boolean;
     darkMode: boolean;
     pauseKeybindBehavior: PauseKeybindBehavior;
+    domainListMode: DomainListMode;
+    domainList: string[];
 }
 
 class Settings extends StorageCache<SettingsData> {
@@ -33,6 +36,8 @@ class Settings extends StorageCache<SettingsData> {
         ignoreHash: false,
         darkMode: false,
         pauseKeybindBehavior: 'permanently',
+        domainListMode: 'blacklist',
+        domainList: [],
     };
 
     private constructor() {
@@ -50,6 +55,8 @@ class Settings extends StorageCache<SettingsData> {
         const booleanValidator = (v: unknown) => typeof v === 'boolean';
         const switchBehaviorValidator = (v: unknown) => ['deleteNew', 'deleteNewAndSwitch', 'deleteOld', 'deleteOldAndSwitch'].includes(v as string);
         const pauseKeybindBehaviorValidator = (v: unknown) => ['showMenu', 'preset0', 'preset1', 'session', 'permanently'].includes(v as string);
+        const domainListModeValidator = (v: unknown) => ['whitelist', 'blacklist'].includes(v as string);
+        const domainListValidator = (v: unknown) => Array.isArray(v) && v.every(domain => typeof domain === 'string' && domain.trim().length > 0);
 
         if (!pauseTimePresetsValidator(settings.pauseTimePresets)) return false;
         if (!booleanValidator(settings.deduplicateInAllWindows)) return false;
@@ -63,6 +70,8 @@ class Settings extends StorageCache<SettingsData> {
         if (!booleanValidator(settings.ignoreHash)) return false;
         if (!booleanValidator(settings.darkMode)) return false;
         if (!pauseKeybindBehaviorValidator(settings.pauseKeybindBehavior)) return false;
+        if (!domainListModeValidator(settings.domainListMode)) return false;
+        if (!domainListValidator(settings.domainList)) return false;
         return true;
     }
 
@@ -146,6 +155,16 @@ class Settings extends StorageCache<SettingsData> {
     getPauseKeybindBehavior(): PauseKeybindBehavior {
         const settings = this.getFromCache();
         return settings.pauseKeybindBehavior;
+    }
+
+    getDomainListMode(): DomainListMode {
+        const settings = this.getFromCache();
+        return settings.domainListMode;
+    }
+
+    getDomainList(): string[] {
+        const settings = this.getFromCache();
+        return [...settings.domainList];
     }
 }
 

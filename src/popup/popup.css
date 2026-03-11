@@ -297,6 +297,90 @@ body {
   opacity: 0.72;
 }
 
+.domain-entry-form {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 230px;
+  height: 30px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.toggle-track::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: calc(50% - 2px);
+  height: calc(100% - 4px);
+  border-radius: 999px;
+  background: var(--color-primary);
+  transition: transform 0.2s ease;
+}
+
+.toggle-option {
+  z-index: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: color 0.2s ease;
+}
+
+.toggle-switch input:checked + .toggle-track::before {
+  transform: translateX(100%);
+}
+
+.toggle-switch input:not(:checked) + .toggle-track .toggle-option:first-child,
+.toggle-switch input:checked + .toggle-track .toggle-option:last-child {
+  color: var(--color-white);
+}
+
+.toggle-switch input:focus-visible + .toggle-track {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.domain-entry-form .secondary-btn {
+  width: auto;
+  min-width: 72px;
+}
+
+.domain-item-label {
+  cursor: default;
+}
+
+.domain-item-label:hover {
+  color: var(--color-text);
+}
+
+.setting-item.domain-error {
+  font-size: 12px;
+  color: var(--color-error);
+  opacity: 1;
+}
+
 .inline-setting-item {
   display: flex;
   flex-direction: row;
@@ -359,6 +443,9 @@ select:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+input[type="text"] {
+  cursor: text;
 }
 
 /* Scrollbar Styling */

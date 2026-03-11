@@ -139,6 +139,41 @@
       </div>
     </div>
 
+    <!-- Whitelist/Blacklist Settings -->
+    <div class="section">
+      <h2>Whitelist/Blacklist Settings</h2>
+      <div class="setting-item">
+        <label class="toggle-switch" for="domainListModeToggle">
+          <input
+            type="checkbox"
+            id="domainListModeToggle"
+            role="switch"
+            aria-label="Toggle domain list mode between blacklist and whitelist"
+          />
+          <span class="toggle-track" aria-hidden="true">
+            <span class="toggle-option">Blacklist</span>
+            <span class="toggle-option">Whitelist</span>
+          </span>
+        </label>
+        <p id="domainListModeDescription">Listed domains are excluded from deduplication (blacklist mode).</p>
+      </div>
+      <form id="domainEntryForm" class="domain-entry-form">
+        <input type="text" id="domainEntry" placeholder="example.com" autocomplete="off" />
+        <button type="submit" class="secondary-btn">Add</button>
+      </form>
+      <p class="setting-item domain-error" id="domainEntryError" hidden>Enter a valid domain, like example.com</p>
+      <p class="duplicate-tabs-empty" id="domainListEmptyState" role="status">No domains in this list yet.</p>
+      <ul class="duplicate-tabs-list" id="domainList" aria-label="Domain list" role="list"></ul>
+      <template id="domainListItemTemplate">
+        <li class="tab-item">
+          <span class="tab-title domain-item-label"></span>
+          <button class="tab-delete" type="button" aria-label="Remove domain">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" fill="none"/><line x1="200" y1="56" x2="56" y2="200" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="200" y1="200" x2="56" y2="56" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+          </button>
+        </li>
+      </template>
+    </div>
+
     <!-- Detach Tab Settings -->
     <div class="section">
       <h2>Detach Tab Settings</h2>
