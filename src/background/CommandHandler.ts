@@ -57,7 +57,8 @@ export default class CommandHandler {
         
         if (highlightedTabs.length === 0) return;
         const window = await browser.windows.create( { tabId: highlightedTabs[0] });
-        if (highlightedTabs.length > 1) {
+        
+        if (highlightedTabs.length > 1 && window.id !== undefined) {
             await browser.tabs.move(highlightedTabs.slice(1), { windowId: window.id, index: -1 });
         }
     }

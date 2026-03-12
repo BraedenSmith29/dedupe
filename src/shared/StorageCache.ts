@@ -35,9 +35,9 @@ export default abstract class StorageCache<T> {
     }
     
     async save(value: T): Promise<void> {
+        await browser.storage.local.set({ [this.storageKey]: value });
         this.cache = value;
         this.onChange(this.cache);
-        await browser.storage.local.set({ [this.storageKey]: value });
     }
 
     async reset(): Promise<void> {

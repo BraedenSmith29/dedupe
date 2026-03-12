@@ -101,7 +101,7 @@ export default class Deduplicator {
             return this.getComparisonUrl(tab.url) === comparisonNewUrl;
         });
 
-        // Sort to priotize pinned tabs, then winows with the sourceWindowId, then most recently active tabs
+        // Sort to prioritize pinned tabs, then windows with the sourceWindowId, then most recently active tabs
         return existingTabs.sort((a, b) => {
             if (a.pinned !== b.pinned) {
                 return a.pinned ? -1 : 1;
