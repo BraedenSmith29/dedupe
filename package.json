@@ -1,14 +1,13 @@
 {
   "name": "firefox-extension-template",
-  "version": "1.0.0",
+  "version": "1.0",
   "scripts": {
-    "build": "tsc && copyfiles -u 1 src/manifest.json src/*.html src/styles/*.css src/*.png build/",
+    "build": "esbuild src/popup/popup.ts src/background/background.ts --bundle --outdir=build --target=es2020 && copyfiles -u 1 src/manifest.json src/popup/*.html src/popup/*.css src/icons/**/* build/",
     "publish": "npm run build && mkdir -p release && (cd build && zip -r ../release/dedupe.zip *) && zip -r release/dedupe-source.zip README.md *.json src/*"
   },
   "devDependencies": {
-    "copyfiles": "^2.4.1"
-  },
-  "dependencies": {
-    "@types/firefox-webext-browser": "^143.0.0"
+    "@types/firefox-webext-browser": "^143.0.0",
+    "copyfiles": "^2.4.1",
+    "esbuild": "^0.27.3"
   }
 }

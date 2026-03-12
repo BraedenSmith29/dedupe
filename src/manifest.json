@@ -3,23 +3,42 @@
   "name": "Dedupe: Tab Deduplicator",
   "version": "1.0",
   "description": "Switch to existing tab instead of opening duplicate",
-  "permissions": ["tabs", "webRequest", "webRequestBlocking", "<all_urls>"],
-  "background": {
-    "scripts": ["background.js"]
+  "permissions": ["storage", "tabs", "sessions"],
+  "icons": {
+    "16": "icons/enabled/icon16.png",
+    "48": "icons/enabled/icon48.png",
+    "128": "icons/enabled/icon128.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_start"
+  "browser_action": {
+    "default_icon": {
+      "32": "icons/enabled/icon32.png",
+      "64": "icons/enabled/icon64.png"
+    },
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "scripts": ["background/background.js"]
+  },
+  "commands": {
+    "toggle-pause": {
+      "suggested_key": {
+        "default": "Shift+Alt+X"
+      },
+      "description": "Pause/unpause the deduplication feature"
+    },
+    "detach-tabs": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Space"
+      },
+      "description": "Detach selected tabs from their window and open them in a new window"
     }
-  ],
+  },
   "browser_specific_settings": {
     "gecko": {
-        "id": "@dedupe-tab-deduplicator",
-        "data_collection_permissions": {
-          "required": ["none"]
-         }
+      "id": "@dedupe-tab-deduplicator",
+      "data_collection_permissions": {
+        "required": ["none"]
       }
+    }
   }
 }
