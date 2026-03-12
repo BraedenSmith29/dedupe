@@ -8,6 +8,24 @@ type DuplicateTabItem = {
     url: string;
 };
 
+function getComparisonUrl(url: string, settings: Settings): string {
+    try {
+        const parsedUrl = new URL(url);
+
+        if (settings.getIgnoreQuery()) {
+            parsedUrl.search = '';
+        }
+        if (settings.getIgnoreHash()) {
+            parsedUrl.hash = '';
+        }
+
+        return parsedUrl.href;
+    } catch (e) {
+        console.error(`Invalid URL: ${url}`);
+        return url;
+    }
+}
+
 async function getDuplicateTabs(settings: Settings): Promise<DuplicateTabItem[][]> {
     const currentWindowId = await browser.windows.getCurrent().then(w => w.id);
 
@@ -18,12 +36,14 @@ async function getDuplicateTabs(settings: Settings): Promise<DuplicateTabItem[][
         if (!tab.id || !tab.windowId || !tab.url) continue;
         if (disabledByDomainList(settings, tab.url)) continue;
 
-        const otherUrls = sortedTabs.get(tab.url) ?? [];
+        const comparisonUrl = getComparisonUrl(tab.url, settings);
+
+        const otherUrls = sortedTabs.get(comparisonUrl) ?? [];
         otherUrls.push({
             tabId: tab.id,
             windowId: tab.windowId,
             title: tab.title || 'Untitled',
-            url: tab.url,
+            url: comparisonUrl,
             index: tab.index,
         });
 
@@ -34,7 +54,7 @@ async function getDuplicateTabs(settings: Settings): Promise<DuplicateTabItem[][
             return a.windowId - b.windowId;
         })
 
-        sortedTabs.set(tab.url, otherUrls);
+        sortedTabs.set(comparisonUrl, otherUrls);
     }
 
     return [...sortedTabs.values()].filter(group => group.length > 1);
