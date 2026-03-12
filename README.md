@@ -10,6 +10,12 @@ A Firefox browser extension that automatically closes duplicate tabs as you brow
 
 ---
 
+## 💬 Description
+
+Dedupe is a Firefox browser extension that minimizes duplicate tabs, keeping you organized and saving some system resources. It works by scanning active tabs whenever you open a new one to check if you're navigating to a page you already have a tab for and, if it finds one, just switches to that tab instead.
+
+---
+
 ## 📖 Background
 
 This came out of a habit of re-opening the same Jira tickets over and over because they'd get buried in tab groups. I'd end up with several copies of the same page and no easy way to clean them up. The extension handles that automatically. When you open a tab that's already open, it redirects you to the existing one (or closes the old one, depending on your settings).
