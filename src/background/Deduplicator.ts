@@ -1,3 +1,4 @@
+import DedupeCounter from "../shared/DedupeCounter";
 import Pause from "../shared/Pause";
 import Settings from "../shared/Settings";
 import { NavigationData, NavigationMethod } from "./navigation";
@@ -8,17 +9,25 @@ export default class Deduplicator {
     private readonly settings: Settings;
     private readonly pause: Pause;
     private readonly windowTracker: WindowTracker;
+    private readonly dedupeCounter: DedupeCounter;
     private readonly tabForgettor: TabForgettor;
 
-    constructor(settings: Settings, pause: Pause, windowTracker: WindowTracker) {
+    private constructor(settings: Settings, pause: Pause, windowTracker: WindowTracker, dedupeCounter: DedupeCounter) {
         this.settings = settings;
         this.pause = pause;
         this.windowTracker = windowTracker;
+        this.dedupeCounter = dedupeCounter;
         this.tabForgettor = new TabForgettor();
     }
 
     public destroy(): void {
         this.tabForgettor.destroy();
+        this.dedupeCounter.destroy();
+    }
+
+    public static async create(settings: Settings, pause: Pause, windowTracker: WindowTracker): Promise<Deduplicator> {
+        const dedupeCounter = await DedupeCounter.create();
+        return new Deduplicator(settings, pause, windowTracker, dedupeCounter);
     }
 
     public async deduplicate(navigationData: NavigationData, newUrl: string, method: NavigationMethod): Promise<void> {
@@ -129,6 +138,7 @@ export default class Deduplicator {
         const tabSwitched = await this.switchToTab(oldTabs[0].id, oldTabs[0].windowId);
         if (!tabSwitched) return;
         await browser.tabs.goBack(navigationData.tabId)
+            .then(() => void this.dedupeCounter.increment())
             .catch(error => {
                 console.error(`Failed to go back in tab ${navigationData.tabId}:`, error);
             });
@@ -221,6 +231,7 @@ export default class Deduplicator {
             this.tabForgettor.addTabToForgetQueue(targetUrl, windowId);
         }
         await browser.tabs.remove(tabId)
+            .then(() => void this.dedupeCounter.increment())
             .catch(error => {
                 console.error(`Failed to remove tab ${tabId}:`, error);
             });

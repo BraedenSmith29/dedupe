@@ -3,14 +3,14 @@ export default abstract class StorageCache<T> {
     private readonly default: T;
 
     private cache: T | null = null;
-    private readonly onStorageChange: ((changes: T | null) => void)[] = [];
+    private readonly onStorageChange: ((changes: T) => void)[] = [];
 
     private readonly storageChangeListener = (changes: { [key: string]: browser.storage.StorageChange }, area: string): void => {
         if (area !== "local") return;
         const changed = changes[this.storageKey];
         if (!changed) return;
 
-        this.cache = changed.newValue ?? this.default;
+        this.cache = (changed.newValue ?? this.default) as T;
         this.onChange(this.cache);
     };
 
@@ -27,7 +27,7 @@ export default abstract class StorageCache<T> {
     async load(): Promise<T | null> {
         try {
             const stored = await browser.storage.local.get(this.storageKey);
-            this.cache = stored[this.storageKey] || this.default;
+            this.cache = stored[this.storageKey] ?? this.default;
         } catch {
             this.cache = this.default;
         }
@@ -49,24 +49,24 @@ export default abstract class StorageCache<T> {
     }
 
     public getFromCache(): T {
-        if (!this.cache) {
+        if (this.cache === null) {
             throw new Error('Cache not loaded');
         }
         return this.cache;
     }
 
-    public addOnChangeListener(callback: (changes: T | null) => void): void {
+    public addOnChangeListener(callback: (changes: T) => void): void {
         this.onStorageChange.push(callback);
     }
 
-    public removeOnChangeListener(callback: (changes: T | null) => void): void {
+    public removeOnChangeListener(callback: (changes: T) => void): void {
         const index = this.onStorageChange.indexOf(callback);
         if (index !== -1) {
             this.onStorageChange.splice(index, 1);
         }
     }
 
-    private onChange(changes: T | null): void {
+    private onChange(changes: T): void {
         this.onStorageChange.forEach(callback => callback(changes));
     }
 }

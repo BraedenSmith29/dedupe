@@ -1,3 +1,4 @@
+import DedupeCounter from "../../shared/DedupeCounter";
 import Settings, { PauseKeybindBehavior, SwitchBehavior } from "../../shared/Settings";
 import { setUpDomainList } from "./domainList";
 
@@ -143,12 +144,27 @@ function setUpResetSettingsHandler(settings: Settings): void {
     });
 }
 
+function setUpStats(): void {
+    DedupeCounter.create().then(async dedupeCounter => {
+        const dedupeCountElement = document.getElementById('dedupeCounter') as HTMLElement | null;
+        if (dedupeCountElement) {
+            dedupeCountElement.textContent = dedupeCounter.getFromCache().toString();
+        }
+        dedupeCounter.addOnChangeListener((count) => {
+            if (dedupeCountElement) {
+                dedupeCountElement.textContent = count?.toString() ?? '0';
+            }
+        });
+    });
+}
+
 export function setUpSettings(settings: Settings): void {
     applyDarkMode(settings);
     setUpSettingsToggle();
     setUpBasicSettingsHandlers(settings);
     setUpPauseSettingHandler(settings);
     setUpResetSettingsHandler(settings);
+    setUpStats();
 
     setUpDomainList(settings);
 }

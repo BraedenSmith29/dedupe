@@ -77,9 +77,9 @@ export default class TabTracker {
         }
     }
 
-    private constructor(settings: Settings, pause: Pause, windowTracker: WindowTracker) {
+    private constructor(windowTracker: WindowTracker, deduplicator: Deduplicator) {
         this.windowTracker = windowTracker;
-        this.deduplicator = new Deduplicator(settings, pause, windowTracker);
+        this.deduplicator = deduplicator;
 
         browser.tabs.onCreated.addListener(this.onTabCreated);
         browser.tabs.onRemoved.addListener(this.onTabRemoved);
@@ -97,7 +97,8 @@ export default class TabTracker {
 
     public static async create(settings: Settings, pause: Pause): Promise<TabTracker> {
         const windowTracker = await WindowTracker.create();
-        const tabTracker = new TabTracker(settings, pause, windowTracker);
+        const deduplicator = await Deduplicator.create(settings, pause, windowTracker);
+        const tabTracker = new TabTracker(windowTracker, deduplicator);
 
         const allTabs = await browser.tabs.query({});
         allTabs.forEach(tab => {
