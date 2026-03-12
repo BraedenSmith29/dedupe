@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Dedupe: Tab Deduplicator",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Switch to existing tab instead of opening duplicate",
   "permissions": ["storage", "tabs", "sessions"],
   "icons": {
