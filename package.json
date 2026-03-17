@@ -1,6 +1,6 @@
 {
   "name": "firefox-extension-template",
-  "version": "2.0",
+  "version": "2.1",
   "scripts": {
     "build": "esbuild src/popup/popup.ts src/background/background.ts --bundle --outdir=build --target=es2020 && copyfiles -u 1 src/manifest.json src/popup/*.html src/popup/*.css src/icons/**/* build/",
     "publish": "npm run build && mkdir -p release && (cd build && zip -r ../release/dedupe.zip *) && zip -r release/dedupe-source.zip README.md *.json src/*"
