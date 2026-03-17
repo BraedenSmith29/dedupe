@@ -126,15 +126,15 @@ export default class TabTracker {
         if (navigationData.newTab) {
             if (!this.isEmptyOrDefaultUrl(previousUrl)) {
                 return 'deliberateDuplicateOrHistory';
-            } else if (navigationData.newWindow) {
+            } else if (!this.isEmptyOrDefaultUrl(newUrl) && navigationData.newWindow) {
                 return 'openedInNewWindow';
-            } else {
+            } else if (!this.isEmptyOrDefaultUrl(newUrl) && !navigationData.newWindow) {
                 return 'openedInNewTabInSameWindow';
             }
         } else {
             if (newUrl === previousUrl) {
                 return 'reload';
-            } else if (!this.isEmptyOrDefaultUrl(newUrl) && (previousUrl === 'about:newtab' || previousUrl === 'about:home')) {
+            } else if (!this.isEmptyOrDefaultUrl(newUrl) && this.isNewTabUrl(previousUrl)) {
                 return 'firstNavigationInFreshTab';
             } else if (!this.isEmptyOrDefaultUrl(newUrl)) {
                 return 'redirect';
@@ -144,7 +144,11 @@ export default class TabTracker {
         return null;
     }
 
-    private isEmptyOrDefaultUrl(url: string | undefined): url is undefined | '' | 'about:blank' | 'about:newtab' | 'about:home' {
-        return url === undefined || url === '' || url === 'about:blank' || url === 'about:newtab' || url === 'about:home';
+    private isEmptyOrDefaultUrl(url: string | undefined): boolean {
+        return url === undefined || url === '' || url === 'about:blank' || this.isNewTabUrl(url);
+    }
+
+    private isNewTabUrl(url: string | undefined): url is string {
+        return url !== undefined && (url === 'about:newtab' || url === 'about:home' || url.includes('moz-extension://'));
     }
 }
